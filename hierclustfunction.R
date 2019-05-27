@@ -3,8 +3,6 @@ require(reshape2)
 require(gplots)
 require(RColorBrewer)
 require(dendextend)
-source('~/UNIBE 6. Semester/Bachelor project/Pertz/rolling_window_loop.R')
-
 
 
 # heatmap function ----
