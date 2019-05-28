@@ -20,11 +20,12 @@ library(imputeTS) # for interpolating NAs
 
 options(shiny.maxRequestSize = 400 * 1024 ^ 2)
 
-source("~/UNIBE 6. Semester/Bachelor project/Pertz/hierclust/hierclustfunction.R")
-source("~/UNIBE 6. Semester/Bachelor project/Pertz/functions/interpolCompleteFunc.R")
-source("~/UNIBE 6. Semester/Bachelor project/Pertz/reactiveAPP/reacRollWinMODULE.R")
-source("~/UNIBE 6. Semester/Bachelor project/Pertz/reactiveAPP/reacHierClustMODULE.R")
-source("~/UNIBE 6. Semester/Bachelor project/Pertz/reactiveAPP/downPlotModule.R")
+source("hierclustfunction.R")
+source("interpolCompleteFunc.R")
+source("reacRollWinMODULE.R")
+source("reacHierClustMODULE.R")
+source('rolling_window_loop.R')
+
 ui <- dashboardPage( # starts shiny in dashboard
   
   dashboardHeader(
