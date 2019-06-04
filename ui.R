@@ -1,3 +1,5 @@
+library(shinydashboard)
+
 ui <- dashboardPage( # starts shiny in dashboard
   
   dashboardHeader(
