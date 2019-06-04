@@ -1,4 +1,5 @@
 library(shinydashboard)
+#library(shinyjs) # http://deanattali.com/shinyjs/
 
 ui <- dashboardPage( # starts shiny in dashboard
   
@@ -42,7 +43,7 @@ ui <- dashboardPage( # starts shiny in dashboard
   dashboardBody(
     
     # Includes the usage of ShinyJS - not used in the app for now
-    useShinyjs(),
+    #useShinyjs(),
     tabItems(
       
       # references to the modules "RollWin" & "HierCluster"
