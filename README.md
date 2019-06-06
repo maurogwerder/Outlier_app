@@ -40,20 +40,20 @@ The first row should include column headers. The input CSV file should contain a
 * Grouping column, e.g. treatment
 
 
-| Group | ID | Time | Meas1 |
-|-------|----|------|-------|
-| gr1   | 1  |  1   | 3.3   |
-| gr1   | 1  |  2   | 2.1   |
-| gr1   | 1  |  4   | 4.3   |
-|-------|----|------|-------|
-| gr1   | 2  |  1   | 2.8   |
-| gr1   | 2  |  2   | 1.9   |
-| gr1   | 2  |  3   | 1.7   |
-| gr1   | 2  |  4   | 2.2   |
-|-------|----|------|-------|
-| gr2   | 1  |  1   | 5.1   |
-| gr2   | 1  |  2   | 5.4   |
-| gr2   | 1  |  3   | 5.3   |
+| Group |  ID  | Time | Meas1 |
+|-------|------|------|-------|
+| gr1   | 1_1  |  1   | 3.3   |
+| gr1   | 1_1  |  2   | 2.1   |
+| gr1   | 1_1  |  4   | 4.3   |
+|-------|------|------|-------|
+| gr1   | 1_2  |  1   | 2.8   |
+| gr1   | 1_2  |  2   | 1.9   |
+| gr1   | 1_2  |  3   | 1.7   |
+| gr1   | 1_2  |  4   | 2.2   |
+|-------|------|------|-------|
+| gr2   | 2_1  |  1   | 5.1   |
+| gr2   | 2_1  |  2   | 5.4   |
+| gr2   | 2_1  |  3   | 5.3   |
 
 
 In case of multi-variate time series, additional columns with variables can be added in the input. Then, GUI allows for choosing a single or a combination of two variables to display.
