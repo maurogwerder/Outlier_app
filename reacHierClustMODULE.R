@@ -18,7 +18,7 @@ HierClusterInput <- function(id,label = "HierClust"){
     
     # plots the heatmap for an overview of the clustering
     box(title = "Heatmap", 
-        plotOutput(ns("plot.heat"), height = "2000px"),
+        plotOutput(ns("plot.heat"), height = "600px"),
         # If there was a mistake with clustering or removing, this will reset the loaded dataset.
         actionButton(ns("b.reset"),"Reset Data"),
         #downPlotInput(ns("downPlot")),

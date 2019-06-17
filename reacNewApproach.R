@@ -132,8 +132,8 @@ server <- function(input, output) {
     InCols <- getDataCols()
     selectInput(
       'inSelFOV',
-      'Select FOV column:',
-      InCols
+      'Select FOV column (optional):',
+      c("none",InCols)
     )
   })
   
@@ -151,7 +151,11 @@ server <- function(input, output) {
     dm.DT[, ID := get(input$inSelID)]
     dm.DT[, TIME := get(input$inSelTime)]
     dm.DT[, MEAS := get(input$inSelMeas)]
-    dm.DT[, FOV := get(input$inSelFOV)]
+    if(input$inSelFOV == "none")
+      dm.DT[, FOV := "-"]
+    else
+      dm.DT[, FOV := get(input$inSelFOV)]
+    
     dm.out <- dm.DT[, .(ID, TIME, MEAS, FOV)]
     return(dm.out)
   })
