@@ -37,7 +37,7 @@ The first row should include column headers. The input CSV file should contain a
 * Unique identifier of time series, i.e. a track label
 * Time points
 * Time-varying variable
-* Grouping column, e.g. treatment
+* Grouping column, e.g. treatment (optional)
 
 
 | Group |  ID  | Time | Meas1 |
@@ -55,6 +55,8 @@ The first row should include column headers. The input CSV file should contain a
 | gr2   | 2_1  |  2   | 5.4   |
 | gr2   | 2_1  |  3   | 5.3   |
 
-
 In case of multi-variate time series, additional columns with variables can be added in the input. Then, GUI allows for choosing a single or a combination of two variables to display.
 
+## Thesis "Interactive Time-series Outlier Detection": 
+The thesis centering around the devlopment of this application can be accessed here:
+https://www.researchgate.net/publication/333845151_Interactive_Time-series_Outlier_Detection
