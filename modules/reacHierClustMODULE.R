@@ -26,7 +26,7 @@ HierClusterInput <- function(id,label = "HierClust"){
         width = 7),
     
     # Selectable options for the function "heatmap.2"
-    box(title = "Options for heatmap", selectInput(ns("sel.plot"), "heatmap of dendrogram?", 
+    box(title = "Options for heatmap", selectInput(ns("sel.plot"), "heatmap or dendrogram?", 
                                                    choices = c("heatmap","dendrogram"), selected = "heatmap"), # select plot output
         selectInput(ns("sel.hclust"), "select clustering method",
                     choices = c("single", "ward.D2", "complete", "average", "median"), 
@@ -67,7 +67,8 @@ HierCluster <- function(input, output, session, in.data) {
                          countPrev = isolate(input$b.prevtraj),
                          countNxt = isolate(input$b.nxtraj),
                          countReset = isolate(input$b.reset),
-                         count = 0)
+                         count = 0,
+                         cutvalue = NULL)
   
   # Conversion of the universal column names into a list. Needed for the "heatmap.outliers" function
   l.cols <- list() 
@@ -108,7 +109,7 @@ HierCluster <- function(input, output, session, in.data) {
       
     } else if (InRemoveL != isolate(Rval$countRemoveL)) {
       
-      Rval$count <- 0
+      Rval$count <- 1
       cat("branchCount if InRemoveL\n")
       
       # converts selected trajectories (marked inside the vector with a "1") to removed 
@@ -130,7 +131,7 @@ HierCluster <- function(input, output, session, in.data) {
       
     } else if (InResetTraj != isolate(Rval$countReset)) {
       
-      Rval$count <- 0
+      Rval$count <- 1
       cat("branchCount if InResetTraj\n")
       Rval$countReset <- InResetTraj
       
@@ -181,6 +182,8 @@ HierCluster <- function(input, output, session, in.data) {
     InHclustSel <- input$sel.hclust
     InDistSel <- input$sel.dist
     InTrajStatus <- Rval$trajStatus
+    InPlotSel <- input$sel.plot
+    InColourSel <- input$sel.col
     
     if (is.null(dm.in)) {
       return(NULL)
@@ -199,10 +202,25 @@ HierCluster <- function(input, output, session, in.data) {
     # can be returned.
     
     currentValues <- which(InTrajStatus %in% c(0, 1)) 
-    dm.cut <- dm.in[ID %in% InIDnames$active]
-    cat("active ID names: ", InIDnames$active, "\n")
-    dm.out <- heatmap.outl(dm.cut, plot = F, trim.pos = InBranchCount, in.list = l.cols, dist.method = InDistSel, 
+    dm.cut <- dm.in[ID %in% InIDnames$active] 
+    
+    # heatmap.outl() is run twice, once to find the current values that are present in the smaller group after cutting the dendrogram,
+    # and once to get the corresponding heatmap.
+    Rval$cutvalue <- heatmap.outl(dm.cut, 
+                           plot = F, 
+                           trim.pos = InBranchCount, 
+                           in.list = l.cols, 
+                           dist.method = InDistSel, 
                            hclust.method = InHclustSel)
+    
+    dm.out <- heatmap.outl(dm.cut,
+                           plot = InPlotSel, 
+                           trim.pos = InBranchCount, 
+                           in.list = l.cols,
+                           dist.method = InDistSel, 
+                           hclust.method = InHclustSel,
+                           col_in = InColourSel)
+    
     return(dm.out)
   })
   
@@ -214,7 +232,7 @@ HierCluster <- function(input, output, session, in.data) {
     
     cat("updating groupvector\n")
     dm.in <- in.data()
-    cutreeNames <- hierCut()
+    cutreeNames <- Rval$cutvalue
     InIDnames <- IDnames()
     InTrajStatus <- Rval$trajStatus
     
@@ -224,18 +242,17 @@ HierCluster <- function(input, output, session, in.data) {
     # This reactive will only return something if Rval$trajStatus was already initialised in "hierCut()"
     if (is.null(InTrajStatus))
       return(NULL)
-    
     cutreeValues <- which(InIDnames$complete %in% cutreeNames)
     oldValues <- which(InTrajStatus %in% c(0, 1))
     newValues <- oldValues[which(oldValues %in% cutreeValues)]
-    emptyValues <- oldValues[-which(oldValues %in% cutreeValues)] 
+    emptyValues <- oldValues[ - which(oldValues %in% cutreeValues)] 
     
     # as a side effect, "Rval$trajStatus" will be overwritten with the updated selection
     InTrajStatus[newValues] <- 1
     InTrajStatus[emptyValues] <- 0
     Rval$trajStatus <- InTrajStatus
     
-    dm.ID <- InIDnames$active[which(InTrajStatus %in% c(0,1))]
+    dm.ID <- InIDnames$active[which(InTrajStatus %in% c(0, 1))]
     dm.out <- dm.in[ID %in% dm.ID]
     
     return(dm.out)
@@ -272,23 +289,14 @@ HierCluster <- function(input, output, session, in.data) {
     ns <- session$ns
     
     cat("hierHeatMap\n")
-    InPlotSel <- input$sel.plot
-    InHclustSel <- input$sel.hclust
-    InDistSel <- input$sel.dist
-    InColourSel <- input$sel.col
-    InBranchCount <- branchCount()
-    dm.in <- groupedData()
+
+    InHeatmap <- hierCut()
     
-    if (is.null(dm.in))
+    if (is.null(InHeatmap))
       return(NULL)
     
     
-    dm.out <- heatmap.outl(dm.in, plot = InPlotSel, 
-                 dist.method = InDistSel, 
-                 hclust.method = InHclustSel,
-                 col_in = InColourSel,
-                 trim.pos = InBranchCount, 
-                 in.list = l.cols ) 
+    dm.out <- InHeatmap 
     
     return(dm.out)
   }
@@ -313,6 +321,7 @@ HierCluster <- function(input, output, session, in.data) {
     dm.in <- groupedData()
     InIDlist <- IDnames()
     InTrajStatus <- Rval$trajStatus
+    heatmap.traj <- as.vector(Rval$cutvalue)
     
     if (is.null(dm.in))
       return(NULL)
@@ -326,11 +335,12 @@ HierCluster <- function(input, output, session, in.data) {
     
     # plots selected trajectory
     plot1 <- ggplot(dm.outliers, aes(x = TIME, y = MEAS, group = ID)) + 
-      ggtitle(paste("traj", dm.outliers[, unique(ID)])) +
+      ggtitle(paste0("trajectory: ", paste(heatmap.traj, collapse = ", "))) +
       geom_line() 
     # plots all the remaining trajectories
     plot2 <- ggplot(dm.update, aes(x = TIME, y = MEAS, group = ID)) + 
-      geom_line() 
+      ggtitle("remaining trajectories") +
+      geom_line(alpha = 0.5) 
     # arranges plots side to side
     dm.out <- grid.arrange(plot1, plot2, ncol = 2)
     

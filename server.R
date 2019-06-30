@@ -8,7 +8,6 @@
 
 library(shiny)
 library(shinydashboard)
-#library(shinyjs) # http://deanattali.com/shinyjs/
 library(ggplot2)
 library(data.table) 
 library(gplots) # for heatmap.2

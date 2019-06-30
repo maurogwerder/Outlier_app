@@ -6,10 +6,12 @@ ui <- dashboardPage( # starts shiny in dashboard
   dashboardHeader(
     
     # Application title
-    title ="Outlier Detection" 
+    title ="Outlier Detection"
+    
     
   ),
   dashboardSidebar(
+    width = 250,
     
     # dashboard-equivalent to "tabs" in normal shiny
     sidebarMenu(
