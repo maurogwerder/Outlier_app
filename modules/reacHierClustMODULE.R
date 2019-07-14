@@ -29,7 +29,7 @@ HierClusterInput <- function(id,label = "HierClust"){
     box(title = "Options for heatmap", selectInput(ns("sel.plot"), "heatmap or dendrogram?", 
                                                    choices = c("heatmap","dendrogram"), selected = "heatmap"), # select plot output
         selectInput(ns("sel.hclust"), "select clustering method",
-                    choices = c("single", "ward.D2", "complete", "average", "median"), 
+                    choices = c("single", "ward.D2", "complete", "average"), 
                     selected = "single"), 
         selectInput(ns("sel.dist"), "select distance method", 
                     choices = c("euclidean", "maximum", "manhattan", "canberra" ,"binary", "minkowski"),
@@ -46,8 +46,7 @@ HierClusterInput <- function(id,label = "HierClust"){
     box(title = "Trajectories", plotOutput(ns("plot.traj"), height = 250),
         actionButton(ns("b.prevtraj"), "previous trajectory"),
         actionButton(ns("b.nxtraj"),"next trajectory"),
-        actionButton(ns("b.remove.left"), "remove trajectories (left)"),
-        actionButton(ns("b.remove.right"),"remove trajectories (right)"),
+        actionButton(ns("b.remove"), "remove trajectories"),
         width = 7)
   )
 }
@@ -62,8 +61,7 @@ HierCluster <- function(input, output, session, in.data) {
   #                  All reactive values with "counter" in their name are used to keep track
   #                  of which trajectory should be displayed for verification.
   Rval <- reactiveValues(trajStatus = NULL,
-                         countRemoveL = isolate(input$b.remove.left),
-                         countRemoveR = isolate(input$b.remove.right),
+                         countRemove = isolate(input$b.remove),
                          countPrev = isolate(input$b.prevtraj),
                          countNxt = isolate(input$b.nxtraj),
                          countReset = isolate(input$b.reset),
@@ -89,8 +87,7 @@ HierCluster <- function(input, output, session, in.data) {
     cat("branchCount\n")
     InPrevTraj <- input$b.prevtraj
     InNxtTraj <- input$b.nxtraj
-    InRemoveL <- input$b.remove.left
-    InRemoveR <- input$b.remove.right
+    InRemove <- input$b.remove
     InResetTraj <- input$b.reset
     InTrajStatus <- Rval$trajStatus
     InCount <- Rval$count
@@ -107,27 +104,21 @@ HierCluster <- function(input, output, session, in.data) {
       cat("branchCount if InPrevTraj\n")
       Rval$countPrev <- InPrevTraj
       
-    } else if (InRemoveL != isolate(Rval$countRemoveL)) {
+    } else if (InRemove != isolate(Rval$countRemove)) {
       
       Rval$count <- 1
       cat("branchCount if InRemoveL\n")
       
       # converts selected trajectories (marked inside the vector with a "1") to removed 
-      # trajectories (marked with a "2")
-      InTrajStatus[which(InTrajStatus %in% 1)] <- 2
+      # trajectories (marked with a "2"); If-statement guarantees that the selected trajectory
+      # will be removed rather than the remaining ones (bug-fixing)
+      if(length(InTrajStatus[InTrajStatus == 1]) < length(InTrajStatus[InTrajStatus == 0])) {
+        InTrajStatus[which(InTrajStatus %in% 1)] <- 2
+      } else {
+        InTrajStatus[which(InTrajStatus %in% 0)] <- 2
+      }
       Rval$trajStatus <- InTrajStatus
-      Rval$countRemoveL <- InRemoveL
-      
-    } else if (InRemoveR != isolate(Rval$countRemoveR)) {
-      
-      Rval$count <- 1
-      cat("branchCount if InRemoveR\n")
-      
-      # converts selected trajectories (marked inside the vector with a "0") to removed 
-      # trajectories (marked with a "2")
-      InTrajStatus[which(InTrajStatus %in% 0)] <- 2
-      Rval$trajStatus <- InTrajStatus
-      Rval$countRemoveR <- InRemoveR
+      Rval$countRemove <- InRemoveL
       
     } else if (InResetTraj != isolate(Rval$countReset)) {
       
@@ -251,8 +242,7 @@ HierCluster <- function(input, output, session, in.data) {
     InTrajStatus[newValues] <- 1
     InTrajStatus[emptyValues] <- 0
     Rval$trajStatus <- InTrajStatus
-    
-    dm.ID <- InIDnames$active[which(InTrajStatus %in% c(0, 1))]
+    dm.ID <- InIDnames$complete[which(InTrajStatus %in% c(0, 1))]
     dm.out <- dm.in[ID %in% dm.ID]
     
     return(dm.out)
@@ -321,7 +311,7 @@ HierCluster <- function(input, output, session, in.data) {
     dm.in <- groupedData()
     InIDlist <- IDnames()
     InTrajStatus <- Rval$trajStatus
-    heatmap.traj <- as.vector(Rval$cutvalue)
+    heatmap.traj <- Rval$cutvalue
     
     if (is.null(dm.in))
       return(NULL)
@@ -329,18 +319,32 @@ HierCluster <- function(input, output, session, in.data) {
     # Excludes removed trajectories from the vector, such that the vector and the datatable have the same length.
     if(is.null(InIDlist$update))
       return(NULL)
-    
     dm.outliers <- dm.in[ID %in% InIDlist$outl]
     dm.update <- dm.in[ID %in% InIDlist$update]
     
+    # if statement to guarantee for selected trajectories to appear on plot1 rather than plot2 which shows remaining trajectories.
+    if( length(dm.outliers[, unique(ID)]) < length(dm.update[, unique(ID)])) {
+      dm.plot1 <- dm.outliers
+      dm.plot2 <- dm.update
+    } else {
+      dm.plot1 <- dm.update
+      dm.plot2 <- dm.outliers
+    }
+    
     # plots selected trajectory
-    plot1 <- ggplot(dm.outliers, aes(x = TIME, y = MEAS, group = ID)) + 
-      ggtitle(paste0("trajectory: ", paste(heatmap.traj, collapse = ", "))) +
+    plot1 <- ggplot(dm.plot1, aes(x = TIME, y = MEAS, group = ID)) + 
+      ggtitle(paste0("trajectory: ", paste(dm.plot1[, unique(ID)], collapse = ", "))) +
+      theme_bw() +
+      scale_x_continuous(name = "Time") +
+      scale_y_continuous(name = "Measurement") +
       geom_line() 
     # plots all the remaining trajectories
-    plot2 <- ggplot(dm.update, aes(x = TIME, y = MEAS, group = ID)) + 
+    plot2 <- ggplot(dm.plot2, aes(x = TIME, y = MEAS, group = ID)) + 
       ggtitle("remaining trajectories") +
-      geom_line(alpha = 0.5) 
+      theme_bw() +
+      scale_x_continuous(name = "Time") +
+      scale_y_continuous(name = "Measurement") +
+      geom_line(alpha = 0.4) 
     # arranges plots side to side
     dm.out <- grid.arrange(plot1, plot2, ncol = 2)
     

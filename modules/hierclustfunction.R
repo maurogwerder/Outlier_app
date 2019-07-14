@@ -126,7 +126,7 @@ heatmapforVisual <- function(data, # should be DT
     }
   }
   
-  return (as.numeric(names(which(ct.loc > 1)))) #returns position of detected trajectories
+  return (names(which(ct.loc > 1))) #returns position of detected trajectories
   
 }
 
