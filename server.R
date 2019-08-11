@@ -1,4 +1,4 @@
-#'
+#"
 #' Outlier Detection App: Application to identify outliers in time-series data.
 #' Author: Mauro Gwerder
 #' 
@@ -38,8 +38,8 @@ server <- function(input, output) {
     cat("output UI ID\n")
     InCols <- getDataCols()
     selectInput(
-      'inSelID',
-      'Select ID column (e.g. TrackLabel):',
+      "inSelID",
+      "Select ID column (e.g. TrackLabel):",
       InCols
     )
   })
@@ -48,30 +48,62 @@ server <- function(input, output) {
     cat("output UI Time\n")
     InCols <- getDataCols()
     selectInput(
-      'inSelTime',
-      'Select time column (e.g. MetaData_Time):',
+      "inSelTime",
+      "Select time column (e.g. MetaData_Time):",
       InCols
     )
   })
   
-  output$uiOut.meas <- renderUI({
-    cat("output UI Meas\n")
+  output$uiOut.meas1 <- renderUI({
+    cat("output UI Meas1\n")
     InCols <- getDataCols()
     selectInput(
-      'inSelMeas',
-      'Select measurement column:',
+      "inSelMeas1",
+      "Select first measurement column:",
       InCols
     )
   })
+  # optional selection for 2nd measurement column. The necessary operator can be selected in 'output$uiOut.ops'
+  output$uiOut.meas2 <- renderUI({
+    cat("output UI meas2\n")
+    InCols <- getDataCols()
+    selectInput(
+      "inSelMeas2",
+      "Select 2nd Measurement (optional):",
+      c("none", InCols)
+    )
+  })
+  
+  output$uiOut.ops <- renderUI({
+    dm.in <- loadData()
+    cat("output UI ops\n")
+    # the operator selection will only appear if a 2nd measurement column was chosen
+    if(is.null(input$inSelMeas2) || input$inSelMeas2 == "none")
+      return(NULL)
+    radioButtons(
+      "inSelOps",
+      "Math operation 1st and 2nd meas.:",
+          c(
+            "None" = "none",
+            "Divide" = " / ",
+            "Sum" = " + ",
+            "Multiply" = " * ",
+            "Subtract" = " - ",
+            "1 / X" = "1 / "
+          )
+    )
+  })
+  
   output$uiOut.FOV <- renderUI({
     cat("output UI FOV\n")
     InCols <- getDataCols()
     selectInput(
-      'inSelFOV',
-      'Select FOV column (optional):',
-      c("none",InCols)
+      "inSelFOV",
+      "Select FOV column (optional):",
+      c("none", InCols)
     )
   })
+  
   
   # extracts data of chosen columns out of loaded dataset
   # gives universal column names
@@ -82,11 +114,20 @@ server <- function(input, output) {
     
     if(is.null(dm.in))
       return(NULL)
-    
     dm.DT <- as.data.table(dm.in)
     dm.DT[, ID := get(input$inSelID)]
     dm.DT[, TIME := get(input$inSelTime)]
-    dm.DT[, MEAS := get(input$inSelMeas)]
+    
+    if(input$inSelMeas2 == "none" || input$inSelOps == "none")
+      loc.meas = input$inSelMeas1
+    else if (input$inSelOps == "1 / ")
+        loc.meas = paste0(input$inSelOps, input$inSelMeas1)
+    else 
+        # pastes the two measurement column names and the operator together to one string
+        loc.meas = paste0(input$inSelMeas1, input$inSelOps, input$inSelMeas2)
+    
+    dm.DT[, MEAS := eval(parse(text = loc.meas))]
+    
     if(input$inSelFOV == "none")
       dm.DT[, FOV := "-"]
     else
@@ -145,7 +186,7 @@ server <- function(input, output) {
   loadData <- eventReactive(input$file.name, {
     dm <- input$file.name
     cat("DataLoad\n")
-    if (!(is.null(dm) || dm == ''))
+    if (!(is.null(dm) || dm == ""))
       return(fread(dm$datapath))
   })
   

@@ -21,7 +21,6 @@ RollWinInput <- function(id, label = "RollWin"){
         plotOutput(ns("plot.overview")),
         actionButton(ns("b.detect"), "detect outliers"),
         downloadButton(ns('downPlot'), 'Download Overview Plot'),
-        #downPlotInput(ns("downPlot")),
         width = 8),
     
     # Carries all options for the rolling window algorithm. Link.print will return a .csv file
@@ -80,10 +79,10 @@ RollWin <- function(input, output, session, in.data){
   
   # Conversion of the universal column names into a list. Needed for the "heatmap.outliers" function
   l.cols <- list() 
-  l.cols$id <- 'ID'
-  l.cols$time <- 'TIME'
-  l.cols$meas <- 'MEAS'
-  l.cols$fov <- 'FOV'
+  l.cols$id <- "ID"
+  l.cols$time <- "TIME"
+  l.cols$meas <- "MEAS"
+  l.cols$fov <- "FOV"
   
   
   # Keeps track of which trajectory is currently selected using "input$b.prevtraj" & "input$b.nxtraj"
@@ -316,7 +315,7 @@ RollWin <- function(input, output, session, in.data){
         scale_color_manual(values = c("#000000", "#fc0505"), name = "Detected Outlier", labels = c("No", "Yes")) +
         scale_x_continuous(name = "Time") +
         scale_y_continuous(name = "Measurement") +
-        facet_wrap(as.formula(paste0('~', "FOV"))) +
+        facet_wrap(as.formula(paste0("~", "FOV"))) +
         theme_bw()
       
     } else if(InPlotVis == "heatmap") {

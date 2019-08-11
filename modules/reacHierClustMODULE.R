@@ -22,7 +22,7 @@ HierClusterInput <- function(id,label = "HierClust"){
         # If there was a mistake with clustering or removing, this will reset the loaded dataset.
         actionButton(ns("b.reset"),"Reset Data"),
         #downPlotInput(ns("downPlot")),
-        downloadButton(ns('downPlot'), 'Download Overview Plot'),
+        downloadButton(ns("downPlot"), "Download Overview Plot"),
         width = 7),
     
     # Selectable options for the function "heatmap.2"
@@ -35,7 +35,6 @@ HierClusterInput <- function(id,label = "HierClust"){
                     choices = c("euclidean", "maximum", "manhattan", "canberra" ,"binary", "minkowski"),
                     selected = "euclidean"), 
         selectInput(ns("sel.col"), "select colour scheme", 
-                    # need to still change this to maciej's "l.col.pal.dend" palette options
                     choices = c("Greens", "Spectral", "RdYlGn", "BrBG", "Greys"), selected = "Spectral"),
         br(),
         
@@ -70,10 +69,10 @@ HierCluster <- function(input, output, session, in.data) {
   
   # Conversion of the universal column names into a list. Needed for the "heatmap.outliers" function
   l.cols <- list() 
-  l.cols$id <- 'ID'
-  l.cols$time <- 'TIME'
-  l.cols$meas <- 'MEAS'
-  l.cols$fov <- 'FOV'
+  l.cols$id <- "ID"
+  l.cols$time <- "TIME"
+  l.cols$meas <- "MEAS"
+  l.cols$fov <- "FOV"
   
   # This reactive environment keeps track of which trajectories are selected for verification in "plot.traj".
   # It also resets this selection whenever the reset button or the remove button are pressed.

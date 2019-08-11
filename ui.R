@@ -29,14 +29,16 @@ ui <- dashboardPage( # starts shiny in dashboard
                actionButton("b.syndata", "generate synthetic data"),
                br()),
       
-      menuItem("Load Data", tabName = " ownDataOpt", icon = icon("file"),
+      menuItem("Load Data", tabName = "ownDataOpt", icon = icon("file"),
                fileInput("file.name", "file name:",
-                         accept = c('text/csv', 'text/comma-separated-values,text/plain')
+                         accept = c("text/csv", "text/comma-separated-values,text/plain")
                ),
                # extracted columns from the loaded dataset will be displayed for selection
                uiOutput("uiOut.ID"),
                uiOutput("uiOut.time"),
-               uiOutput("uiOut.meas"),
+               uiOutput("uiOut.meas1"),
+               uiOutput("uiOut.meas2"),
+               uiOutput("uiOut.ops"),
                uiOutput("uiOut.FOV"),
                actionButton("b.loaddata", "load File"),
                br())
