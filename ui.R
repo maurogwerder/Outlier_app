@@ -11,7 +11,7 @@ ui <- dashboardPage( # starts shiny in dashboard
     
   ),
   dashboardSidebar(
-    width = 250,
+    width = 400,
     
     # dashboard-equivalent to "tabs" in normal shiny
     sidebarMenu(
@@ -24,14 +24,15 @@ ui <- dashboardPage( # starts shiny in dashboard
       menuItem("hierarchical clustering", tabName = "hiercluster", icon = icon("tree")),
       
       menuItem("Generate synthetic Data", tabName = "synDataOpt", icon = icon("random"), # tab for synthetic Data options
-               sliderInput("slider.syn", "amount of outliers", 0, 30, 1),
+               sliderInput("slider.syn", "amount of outliers", 0, 30, 1, width = "100%"),
                checkboxInput("check.super", "add innovative outliers"),
                actionButton("b.syndata", "generate synthetic data"),
                br()),
       
       menuItem("Load Data", tabName = "ownDataOpt", icon = icon("file"),
                fileInput("file.name", "file name:",
-                         accept = c("text/csv", "text/comma-separated-values,text/plain")
+                         accept = c("text/csv", "text/comma-separated-values,text/plain"),
+                         width = "100%"
                ),
                # extracted columns from the loaded dataset will be displayed for selection
                uiOutput("uiOut.ID"),

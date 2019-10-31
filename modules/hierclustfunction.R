@@ -16,35 +16,70 @@ heatmap.outl <- function(data, # should be DT
                          ) {
   
   l.cols <- in.list
-  data.loc <- data #converts data to local environment
+  #data.loc <- data #converts data to local environment
   
   # creates local matrix: rows = id numbers, cols = timepoints
-  mat.loc <- acast(data.loc, data.loc[[l.cols$id]] ~ data.loc[[l.cols$time]], value.var = l.cols$meas) 
+  #mat.loc <- acast(data.loc, data.loc[[l.cols$id]] ~ data.loc[[l.cols$time]], value.var = l.cols$meas) 
   
-  distfun.loc <- function(x) dist(x, method = dist.method) # function for changing the distance-measurement method
-  hclustfun.loc <- function(x) hclust(x, method = hclust.method) #function for changing the hclustering method
+  data.wide <- dcast(data, 
+                    reformulate(response = l.cols$id, termlabels = l.cols$time),
+                    value.var = l.cols$meas)
+  
+  # storing rownames for later
+  loc.rownames <- data.wide[[l.cols$id]]
+  
+  # omitting first column containing rownames
+  mat.loc <- as.matrix(data.wide[, -1])
+  
+  # assigning row names to matrix
+  rownames(mat.loc) <- loc.rownames
+  
+  # Check for missing time points
+  # Missing rows in the long format give rise to NAs during dcast
+  # Here, we are not checking for explicit NAs in COLY column
+  if ((sum(is.na(data[[l.cols$meas]])) == 0) & (sum(is.na(data.wide)) > 0))
+    cat(file = stderr(), "Missing rows. Consider interpolation.\n")
+  
+  #distfun.loc <- function(x) dist(x, method = dist.method) # function for changing the distance-measurement method
+  #hclustfun.loc <- function(x) hclust(x, method = hclust.method) #function for changing the hclustering method
   
   palette.loc <- colorRampPalette(brewer.pal(9, rev(col_in)))(n = 99) #color palette. package: RColorBrewer
-  hc.rows <-  hclust(dist(mat.loc, method = dist.method), method = hclust.method) #stores information about branching heights
+  
+  # calc dist matrix
+  cat("Calculating distance matrix\n")
+  dist.loc <- dist(mat.loc, method = dist.method)
+  
+  cat("Calculating dendrogram\n")
+  hc.rows <-  hclust(dist.loc, method = hclust.method) #stores information about branching heights
+  
+  cat("Get height\n")
   hc.height <- rev(hc.rows$height)[trim.pos + 1] # here we get the height output of the first branching event
-  ct.loc <- cutree(hclust(dist(mat.loc, method = dist.method), method = hclust.method), h = hc.height) # contains information about grouping after treecutting
+  print(hc.height)
+  
+  cat("Calculate tree cut\n")
+  ct.loc <- cutree(hc.rows, h = hc.height) # contains information about grouping after treecutting
+  
+  cat("Calculate groups after tree cut\n")
   ct.uniq <- length(unique(ct.loc)) # to see how many groups there are
-  dend <- as.dendrogram(hclust(dist(mat.loc, method = dist.method), method = hclust.method), h = hc.height) #dendrogram is needed to customize the colours
-  d1 <- color_branches(dend, k = ct.uniq, col = c(rep(2,(ct.uniq-1)),1)) # ct.uniq can be used to differ between outlier groups.
-  col_labels <- get_leaves_branches_col(d1)
-  col_labels <- col_labels[order(order.dendrogram(d1))] # label ordering for heatmap.2 function
+  print(ct.uniq)
+  
+  dend <- as.dendrogram(hc.rows, h = hc.height) #dendrogram is needed to customize the colours
+  #d1 <- color_branches(dend, k = ct.uniq, col = c(rep(2,(ct.uniq-1)),1)) # ct.uniq can be used to differ between outlier groups.
+  
+  #col_labels <- get_leaves_branches_col(d1)
+  #col_labels <- col_labels[order(order.dendrogram(d1))] # label ordering for heatmap.2 function
   
   if (plot == "heatmap") { # plots heatmap
     
     heatmap.2(mat.loc,
-              Rowv = d1,
+              Rowv = dend,
               Colv = FALSE,
               dendrogram = "row",
-              trace = "none",
-              distfun = distfun.loc,
-              hclustfun = hclustfun.loc,
-              col = palette.loc,
-              colRow = col_labels
+              trace = "none"#,
+              #distfun = distfun.loc,
+              #hclustfun = hclustfun.loc,
+              #col = palette.loc,
+              #colRow = col_labels
               )
   } else {
     

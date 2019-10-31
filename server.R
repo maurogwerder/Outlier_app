@@ -40,7 +40,8 @@ server <- function(input, output) {
     selectInput(
       "inSelID",
       "Select ID column (e.g. TrackLabel):",
-      InCols
+      InCols,
+      width = "100%"
     )
   })
   
@@ -50,7 +51,8 @@ server <- function(input, output) {
     selectInput(
       "inSelTime",
       "Select time column (e.g. MetaData_Time):",
-      InCols
+      InCols,
+      width = "100%"
     )
   })
   
@@ -60,7 +62,8 @@ server <- function(input, output) {
     selectInput(
       "inSelMeas1",
       "Select first measurement column:",
-      InCols
+      InCols,
+      width = "100%"
     )
   })
   # optional selection for 2nd measurement column. The necessary operator can be selected in 'output$uiOut.ops'
@@ -70,7 +73,8 @@ server <- function(input, output) {
     selectInput(
       "inSelMeas2",
       "Select 2nd Measurement (optional):",
-      c("none", InCols)
+      c("none", InCols),
+      width = "100%"
     )
   })
   
@@ -100,7 +104,8 @@ server <- function(input, output) {
     selectInput(
       "inSelFOV",
       "Select FOV column (optional):",
-      c("none", InCols)
+      c("none", InCols),
+      width = "100%"
     )
   })
   
