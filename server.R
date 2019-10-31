@@ -212,19 +212,19 @@ server <- function(input, output) {
     # as we set the values in this same reactive
     if (InLoadData != isolate(counter$loadData)) {
       cat("dataInBoth if InLoadData\n")
-      dm = loadColData()
+      dm <- loadColData()
       
       counter$loadData <- InLoadData
       
     } else if (InSynData != isolate(counter$synData)) {
       cat("dataInBoth if InSynData\n")
-      dm = synColData()
+      dm <-  synColData()
       
       counter$synData <- InSynData
       
     } else {
       cat("dataInBoth else\n")
-      dm = NULL
+      dm <- NULL
     }
     return(dm)
   })

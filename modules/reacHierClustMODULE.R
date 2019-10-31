@@ -106,7 +106,7 @@ HierCluster <- function(input, output, session, in.data) {
     } else if (InRemove != isolate(Rval$countRemove)) {
       
       Rval$count <- 1
-      cat("branchCount if InRemoveL\n")
+      cat("branchCount if InRemove\n")
       
       # converts selected trajectories (marked inside the vector with a "1") to removed 
       # trajectories (marked with a "2"); If-statement guarantees that the selected trajectory
@@ -117,7 +117,7 @@ HierCluster <- function(input, output, session, in.data) {
         InTrajStatus[which(InTrajStatus %in% 0)] <- 2
       }
       Rval$trajStatus <- InTrajStatus
-      Rval$countRemove <- InRemoveL
+      Rval$countRemove <- InRemove
       
     } else if (InResetTraj != isolate(Rval$countReset)) {
       
@@ -148,12 +148,18 @@ HierCluster <- function(input, output, session, in.data) {
     
     if(is.null(dm.in))
       return(NULL)
+    
     l.id <- list()
     l.id$complete <- as.vector(dm.in[, unique(ID)])
     l.id$active <- l.id$complete[which(InTrajStatus %in% c(0,1))]
     l.id$outl <- l.id$complete[which(InTrajStatus %in% 1)]
     l.id$update <- l.id$complete[which(InTrajStatus %in% 0)]
     l.id$remove <- l.id$complete[which(InTrajStatus %in% 2)]
+    
+    # sets the length of the vector "Rval$trajStatus" according to the amount of the number of trajectories. 
+    # This is needed when another dataset with more trajectories is loaded during the same session.
+    if (length(InTrajStatus) != length(l.id$complete))
+      Rval$trajStatus <- rep(0, length(l.id$complete))
     
     return(l.id)
   })
@@ -286,7 +292,7 @@ HierCluster <- function(input, output, session, in.data) {
     
     
     dm.out <- InHeatmap 
-    
+    print(dm.out)    
     return(dm.out)
   }
     
@@ -362,6 +368,5 @@ HierCluster <- function(input, output, session, in.data) {
     
   })
   
-  #callModule(downPlot, "downPlot", in.plot = plotHierHeat)
 }
 

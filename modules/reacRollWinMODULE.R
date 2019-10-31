@@ -322,11 +322,14 @@ RollWin <- function(input, output, session, in.data){
       
       # gives high values to detected outlier points, so that they will be significantly different to undetected values for heatmap plotting
       dm[, HEAT.MEAS := MEAS] 
-      dm[GROUP.SINGLE == T, HEAT.MEAS := 1000000] 
+      binningMax <- dm[,max(OUTL.NA, na.rm = T)]
+      dm[GROUP.SINGLE == T, HEAT.MEAS := binningMax + 0.1]
+      l.cols.heat <- l.cols
+      l.cols.heat$meas <- "HEAT.MEAS"
       binningMax <- dm[,max(OUTL.NA, na.rm = T)] #creates specific threshold to separate outliers from normal data
       markedheat <- c(heat.colors(30, alpha = 1), "#2E64FE") # creates custom color palette to color outliers blue
       
-      dm.out <- heatmapforVisual(dm, trim.pos = 0, breaks.in = 30, break.thresh = binningMax, col_in = markedheat, break.man = T, in.list = l.cols)
+      dm.out <- heatmapforVisual(dm, trim.pos = 0, breaks.in = 30, break.thresh = binningMax, col_in = markedheat, break.man = T, in.list = l.cols.heat)
     }
     return(dm.out)
   }
