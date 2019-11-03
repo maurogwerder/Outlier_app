@@ -38,8 +38,6 @@ HierClusterInput <- function(id,label = "HierClust"){
                     choices = c("Greens", "Spectral", "RdYlGn", "BrBG", "Greys"), selected = "Spectral"),
         br(),
         
-        #returns a .csv file with all the trajectories that were removed
-        downloadButton(ns("downOutl"), "print removed trajectories as .csv"),
         width = 4),
     # Plots single trajectories for verification.
     box(title = "Trajectories", plotOutput(ns("plot.traj")), height = 250,
@@ -269,12 +267,6 @@ HierCluster <- function(input, output, session, in.data) {
     
     return(IDnamesRemove)
   })
-  
-  output$downOutl <- downloadHandler(
-    filename = "Removed_Trajectories.csv",
-    content = function(file) {
-      write.csv(x = IDnamesRemove(), file = file, row.names = FALSE)
-    })
   
   # plots a clustered heatmap with a coloured dendrogram which gives information about the selected
   # trajectories.

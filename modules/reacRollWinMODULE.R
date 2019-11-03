@@ -31,7 +31,6 @@ RollWinInput <- function(id, label = "RollWin"){
       selectInput(ns("sel.rollmethod"), "select rolling window method",
                   choices = c("median", "IQR"), 
                   selected = "IQR"),
-      downloadButton(ns("downRemove"), "print removed trajectories as .csv"),
       width = 4),
     
     # Plots selected trajectory for single interpolation and verification.
@@ -201,13 +200,6 @@ RollWin <- function(input, output, session, in.data){
       
     return(dm.out)
   })
-  
-  # DownloadHandler for all removed trajectories
-  output$downRemove <- downloadHandler(
-    filename = "removed_Trajectories.csv",
-    content = function(file) {
-      write.csv(x = removeDownload(), file = file, row.names = FALSE)
-    })
   
   # Reactive that checks the clicking of "input$b.interp" which allows the interpolation of
   # detected outliers in currently selected single trajectories. 
