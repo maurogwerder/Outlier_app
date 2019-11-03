@@ -42,7 +42,7 @@ HierClusterInput <- function(id,label = "HierClust"){
         downloadButton(ns("downOutl"), "print removed trajectories as .csv"),
         width = 4),
     # Plots single trajectories for verification.
-    box(title = "Trajectories", plotOutput(ns("plot.traj"), height = 250),
+    box(title = "Trajectories", plotOutput(ns("plot.traj")), height = 250,
         actionButton(ns("b.prevtraj"), "previous trajectory"),
         actionButton(ns("b.nxtraj"),"next trajectory"),
         actionButton(ns("b.remove"), "remove trajectories"),
@@ -367,6 +367,6 @@ HierCluster <- function(input, output, session, in.data) {
     plotHierTraj()
     
   })
-  
+   return(IDnamesRemove)
 }
 

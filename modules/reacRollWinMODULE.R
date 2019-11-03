@@ -379,7 +379,6 @@ RollWin <- function(input, output, session, in.data){
     plotSingle()
     
   })
-  
-  #callModule(downPlot, "downPlot", in.plot = plotOverview)
+  return(removeDownload)
 }
 

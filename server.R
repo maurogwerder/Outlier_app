@@ -15,16 +15,17 @@ library(dendextend) # for colouring dendrogram branches
 library(RColorBrewer) # colour palettes for heatmap.2
 library(gridExtra) # presentation of several plots in a grid
 library(imputeTS) # for interpolating NAs
+#library(shinycssloaders) # provides a spinner
 
 options(shiny.maxRequestSize = 400 * 1024 ^ 2)
 
 server <- function(input, output) {
   
   # clustering and generation of heatmap
-  callModule(HierCluster, "HierCluster", in.data = dataInBoth)
+  hierCluster_out <- callModule(HierCluster, "HierCluster", in.data = dataInBoth)
   
   # Application of rolling window algorithm and interpolation
-  callModule(RollWin, "RollWin", in.data = dataInBoth)
+  RollWin_out <- callModule(RollWin, "RollWin", in.data = dataInBoth)
   
   # reactive values used for loading data from two different sources
   # -> see dataInBoth()
@@ -234,5 +235,43 @@ server <- function(input, output) {
     return(dm)
   })
   
+  # Handles the type of downloadable object depending
+  # on chosen options
+  downloadObj <- reactive({
+    cat("downloading selection\n")
+    dm_full <- as.data.table(loadData())
+    dm_short <- loadColData()
+    
+    # Checks from which module the data should be taken
+    if(input$s.downMod == "Rolling Window"){
+      cat("s.downMod: Rolling Window\n")
+      downloadIDs <- RollWin_out()
+      
+    } else {
+      cat("s.downMod: Hierarchical cluster\n")
+      downloadIDs <- hierCluster_out()
+    }
+    
+    if(input$s.download == "full dataset without outliers"){
+      cat("s.download: full\n")
+      data_out <- dm_full[!(get(input$inSelID) %in% downloadIDs)]
+      
+    } else if (input$s.download == "shortened dataset without outliers"){
+      cat("s.download: short\n")
+      data_out <- dm_short[!(ID %in% downloadIDs), .(ID, TIME, MEAS, FOV)]
+      
+    } else if (input$s.download == "Outlier IDs"){
+      cat("s.download: IDs\n")
+      data_out <- downloadIDs
+    }
+    
+    return(data_out)
+  })
+  
+  output$b.download <- downloadHandler(
+    filename = "Removed_Trajectories.csv",
+    content = function(file) {
+      write.csv(x = downloadObj(), file = file, row.names = FALSE)
+    })
 }
 
