@@ -40,7 +40,7 @@ HierClusterInput <- function(id,label = "HierClust"){
         
         width = 4),
     # Plots single trajectories for verification.
-    box(title = "Trajectories", plotOutput(ns("plot.traj")), height = 250,
+    box(title = "Trajectories", plotOutput(ns("plot.traj")), height = 500,
         actionButton(ns("b.prevtraj"), "previous trajectory"),
         actionButton(ns("b.nxtraj"),"next trajectory"),
         actionButton(ns("b.remove"), "remove trajectories"),
@@ -71,6 +71,7 @@ HierCluster <- function(input, output, session, in.data) {
   l.cols$time <- "TIME"
   l.cols$meas <- "MEAS"
   l.cols$fov <- "FOV"
+  
   
   # This reactive environment keeps track of which trajectories are selected for verification in "plot.traj".
   # It also resets this selection whenever the reset button or the remove button are pressed.
@@ -137,6 +138,7 @@ HierCluster <- function(input, output, session, in.data) {
     return(OutCount)
   })
   
+  
   IDnames <- reactive({
     ns <- session$ns
     
@@ -173,15 +175,10 @@ HierCluster <- function(input, output, session, in.data) {
     dm.in <- in.data()
     InBranchCount <- branchCount()
     InIDnames <- IDnames()
-    InHclustSel <- input$sel.hclust
-    InDistSel <- input$sel.dist
     InTrajStatus <- Rval$trajStatus
-    InPlotSel <- input$sel.plot
-    InColourSel <- input$sel.col
     
-    if (is.null(dm.in)) {
+    if (is.null(dm.in))
       return(NULL)
-    }
     
     # As a side effect, this if-statement checks whether the tree isn't cut at all and if any data was removed.
     # If this is the case, the vector stored in "Rval$trajStatus" can be initialised.
@@ -189,35 +186,110 @@ HierCluster <- function(input, output, session, in.data) {
       cat("checkCut\n")
       InTrajStatus <- rep(0, length(dm.in[, unique(ID)]))
       Rval$trajStatus <- InTrajStatus
-      return(dm.in)
     } 
     
     # Only IDs that weren't removed (So trajectories that have either the flag "0" or "1" in "Rval$trajStatus")
     # can be returned.
     
-    currentValues <- which(InTrajStatus %in% c(0, 1)) 
     dm.cut <- dm.in[ID %in% InIDnames$active] 
     
-    # heatmap.outl() is run twice, once to find the current values that are present in the smaller group after cutting the dendrogram,
-    # and once to get the corresponding heatmap.
-    Rval$cutvalue <- heatmap.outl(dm.cut, 
-                           plot = F, 
-                           trim.pos = InBranchCount, 
-                           in.list = l.cols, 
-                           dist.method = InDistSel, 
-                           hclust.method = InHclustSel)
-    
-    dm.out <- heatmap.outl(dm.cut,
-                           plot = InPlotSel, 
-                           trim.pos = InBranchCount, 
-                           in.list = l.cols,
-                           dist.method = InDistSel, 
-                           hclust.method = InHclustSel,
-                           col_in = InColourSel)
-    
-    return(dm.out)
+    return(dm.cut)
   })
   
+  
+  hierMatrix <- reactive({
+    ns <- session$ns
+    
+    cat("updating hierMatrix\n")
+    
+    dm.in <- hierCut()
+    
+    if (is.null(dm.in))
+      return(NULL)
+    
+    heat.matrix <- heatmap.matrix(dm.in, in.list = l.cols)
+    
+    return(heat.matrix)
+  })
+  
+  # calculates distance matrix
+  hierDist <- reactive({
+    ns <- session$ns
+    
+    cat("updating hierDist\n")
+    
+    InMatrix <- hierMatrix()
+    InDistSel <- input$sel.dist
+    
+    if (is.null(InMatrix))
+      return(NULL)
+    
+    cat("Calculating distance matrix\n")
+    heat.dist <- dist(InMatrix, method = InDistSel)
+    
+    return(heat.dist)
+  })
+  
+  
+  hierClust <- reactive({
+    ns <- session$ns
+    
+    cat("updating hierClust\n")
+    
+    InDist <- hierDist()
+    InHclustSel <- input$sel.hclust
+    
+    if (is.null(InDist))
+      return(NULL)
+    
+    cat("Calculating dendrogram\n")
+    hc.rows <-  hclust(InDist, method = InHclustSel) #stores information about branching heights
+    
+    return(hc.rows)
+    
+  })
+  
+  
+  # Calculates dendrogram
+  hierDend <- reactive({
+    ns <- session$ns
+    
+    cat("updating hierDend\n")
+    
+    InClust <- hierClust()
+    
+    if (is.null(InClust)) {
+      return(NULL)
+    }
+    
+    dend <- as.dendrogram(InClust)
+
+    
+    return(dend)
+  })
+  
+  
+  # Returns the IDs of all trajectories that were cut off the tree
+  cutValues <- reactive({
+    
+    ns <- session$ns
+    
+    cat("updating cutValues\n")
+    
+    InClust <- hierClust()
+    InBranchCount <- branchCount()
+    
+    cat("Get height\n")
+    hc.height <- rev(InClust$height)[InBranchCount + 1] # here we get the height output of the first branching event
+    print(hc.height)
+    
+    cat("Calculate tree cut\n")
+    ct.loc <- cutree(InClust, h = hc.height) # contains information about grouping after treecutting
+    
+    cutvalue <- names(which(ct.loc > 1))
+    
+    return(cutvalue)
+  })
   
   
   # Removed Data will be excluded in this reactive.
@@ -226,7 +298,7 @@ HierCluster <- function(input, output, session, in.data) {
     
     cat("updating groupvector\n")
     dm.in <- in.data()
-    cutreeNames <- Rval$cutvalue
+    cutreeNames <- cutValues()
     InIDnames <- IDnames()
     InTrajStatus <- Rval$trajStatus
     
@@ -251,6 +323,7 @@ HierCluster <- function(input, output, session, in.data) {
     return(dm.out)
   })
   
+  
   IDnamesRemove <- reactive({
     ns <- session$ns
     
@@ -268,6 +341,7 @@ HierCluster <- function(input, output, session, in.data) {
     return(IDnamesRemove)
   })
   
+  
   # plots a clustered heatmap with a coloured dendrogram which gives information about the selected
   # trajectories.
   # Function instead of reactive as per:
@@ -277,16 +351,34 @@ HierCluster <- function(input, output, session, in.data) {
     
     cat("hierHeatMap\n")
 
-    InHeatmap <- hierCut()
+    InDend <- hierDend()
+    InMatrix <- hierMatrix()
+    InPlotSel <- input$sel.plot
+    InColourSel <- input$sel.col
     
-    if (is.null(InHeatmap))
+    if (is.null(InDend))
       return(NULL)
     
+    if (is.null(InMatrix))
+      return(NULL)
     
-    dm.out <- InHeatmap 
-    print(dm.out)    
+    palette.loc <- colorRampPalette(brewer.pal(9, rev(InColourSel)))(n = 99) #color palette. package: RColorBrewer
+    
+    if (InPlotSel == "heatmap"){
+      dm.out <- heatmap.2(InMatrix,
+                        Rowv = InDend,
+                        Colv = FALSE,
+                        dendrogram = "row",
+                        trace = "none",
+                        col = palette.loc
+      )
+    } else {
+      dm.out <- plot(InDend)
+    }
+    
     return(dm.out)
   }
+  
     
   output$downPlot <- downloadHandler(
     filename = "downloadPlot.pdf",
@@ -308,7 +400,7 @@ HierCluster <- function(input, output, session, in.data) {
     dm.in <- groupedData()
     InIDlist <- IDnames()
     InTrajStatus <- Rval$trajStatus
-    heatmap.traj <- Rval$cutvalue
+    heatmap.traj <- cutValues()
     
     if (is.null(dm.in))
       return(NULL)
@@ -348,11 +440,13 @@ HierCluster <- function(input, output, session, in.data) {
     return(dm.out)
   })
   
+  
   output$plot.heat <- renderPlot({
     
     plotHierHeat()
     
   })
+  
   
   output$plot.traj <- renderPlot({
     

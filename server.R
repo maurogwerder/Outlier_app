@@ -15,6 +15,7 @@ library(dendextend) # for colouring dendrogram branches
 library(RColorBrewer) # colour palettes for heatmap.2
 library(gridExtra) # presentation of several plots in a grid
 library(imputeTS) # for interpolating NAs
+library(reshape2)
 #library(shinycssloaders) # provides a spinner
 
 options(shiny.maxRequestSize = 400 * 1024 ^ 2)
