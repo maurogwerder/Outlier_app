@@ -32,7 +32,10 @@ ui <- dashboardPage( # starts shiny in dashboard
       
       menuItem("Load Data", tabName = "ownDataOpt", icon = icon("file"),
                fileInput("file.name", "file name:",
-                         accept = c("text/csv", "text/comma-separated-values,text/plain"),
+                         accept = c("text/csv", 
+                                    "text/comma-separated-values,text/plain",
+                                    "application/gzip", 
+                                    "application/bz2"),
                          width = "100%"
                ),
                # extracted columns from the loaded dataset will be displayed for selection
