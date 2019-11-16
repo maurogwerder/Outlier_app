@@ -41,9 +41,10 @@ HierClusterInput <- function(id,label = "HierClust"){
         width = 4),
     # Plots single trajectories for verification.
     box(title = "Trajectories", plotOutput(ns("plot.traj")), height = 500,
-        actionButton(ns("b.prevtraj"), "previous trajectory"),
-        actionButton(ns("b.nxtraj"),"next trajectory"),
-        actionButton(ns("b.remove"), "remove trajectories"),
+        actionButton(ns("b.prevtraj"), "Previous"),
+        actionButton(ns("b.nxtraj"),"Next"),
+        actionButton(ns("b.remove"), "Remove"),
+        actionButton(ns("b.skip"), "Skip "),
         width = 7)
   )
 }
@@ -58,6 +59,7 @@ HierCluster <- function(input, output, session, in.data) {
   #                  All reactive values with "counter" in their name are used to keep track
   #                  of which trajectory should be displayed for verification.
   Rval <- reactiveValues(trajStatus = NULL,
+                         countSkip = isolate(input$b.skip),
                          countRemove = isolate(input$b.remove),
                          countPrev = isolate(input$b.prevtraj),
                          countNxt = isolate(input$b.nxtraj),
@@ -84,6 +86,7 @@ HierCluster <- function(input, output, session, in.data) {
     cat("branchCount\n")
     InPrevTraj <- input$b.prevtraj
     InNxtTraj <- input$b.nxtraj
+    InSkip <- input$b.skip
     InRemove <- input$b.remove
     InResetTraj <- input$b.reset
     InTrajStatus <- Rval$trajStatus
@@ -116,6 +119,23 @@ HierCluster <- function(input, output, session, in.data) {
       }
       Rval$trajStatus <- InTrajStatus
       Rval$countRemove <- InRemove
+      
+      
+    } else if (InSkip != isolate(Rval$countSkip)) {
+      
+      Rval$count <- 1
+      cat("branchCount if InSkip\n")
+      
+      # converts selected trajectories (marked inside the vector with a "1") to skipped
+      # trajectories (marked with a "3"); If-statement guarantees that the selected trajectory
+      # will be skipped rather than the remaining ones (bug-fixing)
+      if(length(InTrajStatus[InTrajStatus == 1]) < length(InTrajStatus[InTrajStatus == 0])) {
+        InTrajStatus[which(InTrajStatus %in% 1)] <- 3
+      } else {
+        InTrajStatus[which(InTrajStatus %in% 0)] <- 3
+      }
+      Rval$trajStatus <- InTrajStatus
+      Rval$countSkip <- InSkip
       
     } else if (InResetTraj != isolate(Rval$countReset)) {
       
@@ -308,11 +328,12 @@ HierCluster <- function(input, output, session, in.data) {
     if (is.null(InTrajStatus))
       return(NULL)
     cutreeValues <- which(InIDnames$complete %in% cutreeNames)
-    oldValues <- which(InTrajStatus %in% c(0, 1))
+    oldValues <- which(InTrajStatus %in% c(0,1))
     newValues <- oldValues[which(oldValues %in% cutreeValues)]
     emptyValues <- oldValues[ - which(oldValues %in% cutreeValues)] 
     
     # as a side effect, "Rval$trajStatus" will be overwritten with the updated selection
+    InTrajStatus [oldValues] <- 0
     InTrajStatus[newValues] <- 1
     InTrajStatus[emptyValues] <- 0
     Rval$trajStatus <- InTrajStatus
