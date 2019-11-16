@@ -62,8 +62,7 @@ HierCluster <- function(input, output, session, in.data) {
                          countPrev = isolate(input$b.prevtraj),
                          countNxt = isolate(input$b.nxtraj),
                          countReset = isolate(input$b.reset),
-                         count = 0,
-                         cutvalue = NULL)
+                         count = 0)
   
   # Conversion of the universal column names into a list. Needed for the "heatmap.outliers" function
   l.cols <- list() 
@@ -389,6 +388,7 @@ HierCluster <- function(input, output, session, in.data) {
       print(plotHierHeat())
       dev.off()
     })
+  
   
   # Returns two plots (using gridExtra): plot1 will return the selected trajectories for verification.
   # The second plot will return all the remaining plots (not sure if needed). They are divided using
