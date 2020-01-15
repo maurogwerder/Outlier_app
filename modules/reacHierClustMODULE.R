@@ -8,11 +8,22 @@
 #' Detected outlier-containing trajectories can be verified and kicked out one
 #' by one by the researcher.
 #'
+library(shinyjs)
+library(shinyBS)
 
+helpText.hierClust = c( liveUpdate = 'When ticked, heatmap and overview-plot will
+                         be updated continuously. Can cause performance issues.',
+                         manualUpdate = "Update the heatmap and the overview plot manually.
+                         Only needed when live updating is disabled.",
+                         skipButton = 'If a selected trajectory should be kept, they can be
+                         marked as skipped.'
+)
 
 HierClusterInput <- function(id,label = "HierClust"){
   # gives all labels into a namespace (can I say it like that?)
   ns <- NS(id)
+  
+  shinyjs::useShinyjs()
   
   fluidRow(
     
@@ -22,7 +33,9 @@ HierClusterInput <- function(id,label = "HierClust"){
         # If there was a mistake with clustering or removing, this will reset the loaded dataset.
         actionButton(ns("b.reset"), "Reset Data"),
         downloadButton(ns("downPlot"), "Download Overview Plot"),
+        height = 700,
         width = 8),
+    
     
     # Selectable options for the function "heatmap.2"
     box(title = "Options for heatmap", selectInput(ns("sel.plot"), "heatmap or dendrogram?", 
@@ -36,26 +49,53 @@ HierClusterInput <- function(id,label = "HierClust"){
         selectInput(ns("sel.col"), "select colour scheme", 
                     choices = c("Greens", "Spectral", "RdYlGn", "BrBG", "Greys"), selected = "Spectral"),
         br(),
+        
+        # If unticked, only the plot displaying the current selected trajectory will be
+        # updated live.
+        checkboxInput(ns('check.update'), "live plot updating?", value = T),
+        bsTooltip(ns('check.update'), helpText.hierClust[['liveUpdate']], placement = "top", trigger = "hover", options = NULL),
+        
+        # Updates heatmap and overviewplot if check.update is not ticked.
         actionButton(ns("b.update"), "Update plots"),
-        checkboxInput(ns("check.update"), "live plot updating?", value = T),
+        bsTooltip(ns("b.update"), helpText.hierClust[["manualUpdate"]], placement = "bottom", trigger = "hover", options = NULL),
         height = 700,
         width = 4),
+    
+    
     # Plots single trajectories for verification.
     box(title = "active Trajectory",
         plotOutput(ns("plot.1"), width = "100%"),
-        actionButton(ns("b.prevtraj"), "Previous"),
-        actionButton(ns("b.nxtraj"),"Next"),
-        actionButton(ns("b.remove"), "Remove"),
-        actionButton(ns("b.skip"), "Skip "),
+        fluidRow(
+          column(2,
+            actionButton(ns("b.prevtraj"), "Previous")),
+          column(3,
+            actionButton(ns("b.nxtraj"),"Next")),
+          column(2,
+            actionButton(ns("b.remove"), "Remove")),
+          column(2,
+            # Instead of removing trajectories, one can mark them as keepable, so they will
+            # be ignored for further annotation
+            actionButton(ns("b.skip"), "Keep"))
+        ),
         width = 4
         ),
+    
     
     box(title = "other Trajectories",
         plotOutput(ns("plot.2"), width = "100%"),
         width = 4,
+        sliderInput(ns("sl.alpha"), "Transparency", 0, 1, 0.5),
         br()
-        )
+        ),
     
+    
+    # Keeps track of the number of removed and skipped Trajectories.
+    box(title = "Processing log",
+        textOutput(ns("txt.total")),
+        textOutput(ns("txt.remove")),
+        textOutput(ns("txt.keep")),
+        width = 4
+        )
   )
 }
 
@@ -74,7 +114,7 @@ HierCluster <- function(input, output, session, in.data) {
                          countPrev = isolate(input$b.prevtraj),
                          countNxt = isolate(input$b.nxtraj),
                          countReset = isolate(input$b.reset),
-                         count = 0)
+                         count = 1)
   
   # Conversion of the universal column names into a list. Needed for the "heatmap.outliers" function
   l.cols <- list() 
@@ -88,8 +128,7 @@ HierCluster <- function(input, output, session, in.data) {
   # It also resets this selection whenever the reset button or the remove button are pressed.
   # Inside the if-statements for "reset" and "remove", there are some deliberate side effects.
   # I decided to do it this way because these side-effects are changing a reactive value (trajStatus) that cannot
-  # be returned using a reactive. This is an alternative to observeEvent() and is combined with the selection-
-  # reset.
+  # be returned using a reactive.
   branchCount <- reactive({
     ns <- session$ns
     
@@ -124,9 +163,9 @@ HierCluster <- function(input, output, session, in.data) {
       # trajectories (marked with a "2"); If-statement guarantees that the selected trajectory
       # will be removed rather than the remaining ones (bug-fixing)
       if(length(InTrajStatus[InTrajStatus == 1]) < length(InTrajStatus[InTrajStatus == 0])) {
-        InTrajStatus[which(InTrajStatus %in% 1)] <- 2
+        InTrajStatus[which(InTrajStatus == 1)] <- 2
       } else {
-        InTrajStatus[which(InTrajStatus %in% 0)] <- 2
+        InTrajStatus[which(InTrajStatus == 0)] <- 2
       }
       Rval$trajStatus <- InTrajStatus
       Rval$countRemove <- InRemove
@@ -141,18 +180,14 @@ HierCluster <- function(input, output, session, in.data) {
       # trajectories (marked with a "3"); If-statement guarantees that the selected trajectory
       # will be skipped rather than the remaining ones (bug-fixing)
       if(length(InTrajStatus[InTrajStatus == 1]) < length(InTrajStatus[InTrajStatus == 0])) {
-        InTrajStatus[which(InTrajStatus %in% 1)] <- 3
+        InTrajStatus[which(InTrajStatus == 1)] <- 3
       } else {
-        InTrajStatus[which(InTrajStatus %in% 0)] <- 3
+        InTrajStatus[which(InTrajStatus == 0)] <- 3
       }
+      
       Rval$trajStatus <- InTrajStatus
       Rval$countSkip <- InSkip
       
-    } else if (InResetTraj != isolate(Rval$countReset)) {
-      
-      Rval$count <- 1
-      cat("branchCount if InResetTraj\n")
-      Rval$countReset <- InResetTraj
     }
     
     OutCount <- Rval$count
@@ -166,14 +201,13 @@ HierCluster <- function(input, output, session, in.data) {
   })
   
   
+  # Extracts all ID names.
   allIDnames <- reactive({
     ns <- session$ns
-    
     
     cat("calling allIDnames")
     
     dm.in <- in.data()
-    
     
     if(is.null(dm.in))
       return(NULL)
@@ -182,7 +216,8 @@ HierCluster <- function(input, output, session, in.data) {
     return(allIDs)
   })
   
-  
+  # Filters through the dataset and removes any removed or skipped trajectories.
+  # This dataset will be displayed in plot 2
   activeData <- reactive({
     ns <- session$ns
     
@@ -192,7 +227,7 @@ HierCluster <- function(input, output, session, in.data) {
     allIDs <- allIDnames()
     InTrajStatus <- Rval$trajStatus
     
-    if(is.null(dm.in))
+    if(is.null(dm.in) || is.null(InTrajStatus) || is.null(allIDs))
       return(NULL)
     
     dm.out <- dm.in[ID %in% allIDs[which(InTrajStatus %in% c(0, 1))]]
@@ -200,35 +235,8 @@ HierCluster <- function(input, output, session, in.data) {
     return(dm.out)
   })
   
-  
-  notSelData <- reactive({
-    ns <- session$ns
-    
-    cat("calling notSelData\n")
-    
-    dm.in <- activeData()
-    allIDs <- allIDnames()
-    InTrajStatus <- Rval$trajStatus
-    
-    if(is.null(dm.in))
-      return(NULL)
-    
-    # if statement to guarantee for selected trajectories to appear on plot1 rather than plot2 which shows remaining trajectories.
-    if( length(InTrajStatus %in% 0) > length(InTrajStatus %in% 1)) {
-      
-      dm.out <- dm.in[ID %in% allIDs[which(InTrajStatus %in% 1)]]
-      
-    } else {
-
-      dm.out <- dm.in[ID %in% allIDs[which(InTrajStatus %in% 0)]]
-      
-    }
-    
-    return(dm.out)
-    
-  })
-  
-  
+  # Filters out any data that is not currently selected.
+  # Will be displayed in plot 1
   selData <- reactive({
     ns <- session$ns
     
@@ -238,43 +246,35 @@ HierCluster <- function(input, output, session, in.data) {
     allIDs <- allIDnames()
     InTrajStatus <- Rval$trajStatus
     
-    if(is.null(dm.in))
+    if(is.null(dm.in) || is.null(InTrajStatus))
       return(NULL)
     
-    # if statement to guarantee for selected trajectories to appear on plot1 rather than plot2 which shows remaining trajectories.
-    if( length(InTrajStatus %in% 0) > length(InTrajStatus %in% 1)) {
-      
-      dm.out <- dm.in[ID %in% allIDs[which(InTrajStatus %in% 0)]]
-      
+    # if-statement to guarantee for selected trajectories to appear on plot1 rather than 
+    # plot2 which shows remaining trajectories.
+    if( length(InTrajStatus == 0) > length(InTrajStatus == 1)) {
+      dm.out <- dm.in[ID %in% allIDs[which(InTrajStatus == 0)]]
     } else {
-      
-      dm.out <- dm.in[ID %in% allIDs[which(InTrajStatus %in% 1)]]
-      
+      dm.out <- dm.in[ID %in% allIDs[which(InTrajStatus == 1)]]
     }
     
     return(dm.out)
-    
   })
   
-  
+  # Will be returned by the module. Used for downloading a reducted dataset.
   removedIDs <- reactive({
     ns <- session$ns
     
     cat("calling removedIDs\n")
     
-    dm.in <- in.data()
     allIDs <- allIDnames()
     InTrajStatus <- Rval$trajStatus
     
-    if(is.null(dm.in))
-      return(NULL)
-    
-    id.out <- allIDs[which(InTrajStatus %in% 2)]
+    id.out <- as.vector(allIDs[which(InTrajStatus == 2)])
     
     return(id.out)
   })
 
-  
+  # Dcasts the dataset 
   hierMatrix <- reactive({
     ns <- session$ns
     
@@ -285,16 +285,16 @@ HierCluster <- function(input, output, session, in.data) {
     if (is.null(dm.in))
       return(NULL)
     
-    heat.matrix <- heatmap.matrix(dm.in, in.list = l.cols)
+    matrix.out <- heatmap.matrix(dm.in, in.list = l.cols)
     
-    return(heat.matrix)
+    return(matrix.out)
   })
   
   # calculates distance matrix
   hierDist <- reactive({
     ns <- session$ns
     
-    cat("updating hierDist\n")
+    cat("Calculating distance matrix\n")
     
     InMatrix <- hierMatrix()
     InDistSel <- input$sel.dist
@@ -302,10 +302,9 @@ HierCluster <- function(input, output, session, in.data) {
     if (is.null(InMatrix))
       return(NULL)
     
-    cat("Calculating distance matrix\n")
-    heat.dist <- dist(InMatrix, method = InDistSel)
+    heat_dist.out <- dist(InMatrix, method = InDistSel)
     
-    return(heat.dist)
+    return(heat_dist.out)
   })
   
   # calculates the clustering and returns the height where the tree is cut into 
@@ -322,10 +321,11 @@ HierCluster <- function(input, output, session, in.data) {
       return(NULL)
     
     cat("Calculating dendrogram\n")
-    hc.rows <-  hclust(InDist, method = InHclustSel) #stores information about branching heights
     
-    return(hc.rows)
+    #stores information about branching heights
+    hc_rows.out <-  hclust(InDist, method = InHclustSel) 
     
+    return(hc_rows.out)
   })
   
   
@@ -341,14 +341,46 @@ HierCluster <- function(input, output, session, in.data) {
     if (is.null(InClust))
       return(NULL)
     
-    dend <- as.dendrogram(InClust)
-
+    dend.out <- as.dendrogram(InClust)
     
-    return(dend)
+    return(dend.out)
   })
   
   
-  # Returns the IDs of all trajectories that were cut off the tree
+  # Calculates the average of all trajectories. Has to be done before plotting such that
+  # plot 1 & 2 is displaying the same average.
+  trajAverage <- reactive({
+    ns <- session$ns
+    
+    cat("calling trajAverage\n")
+    
+    dm.in <- hierMatrix()
+    
+    if(is.null(dm.in))
+      return(NULL)
+    
+    average.out <- colMeans(dm.in, na.rm = T)
+    
+    return(average.out)
+  })
+  
+  
+  plotLims <- reactive({
+    ns <- session$ns
+    
+    cat("calling plotLims\n")
+    
+    dm.in <- hierMatrix()
+    
+    if(is.null(dm.in))
+      return(NULL)
+    
+    lims.out <- list(max = max(dm.in, na.rm = T), min = min(dm.in, na.rm = T))
+    
+    return(lims.out)
+  })
+  
+  # Changes to the reactive vector Rval$trajStatus are processed in this reactive.
   cutValues <- reactive({
     
     ns <- session$ns
@@ -359,10 +391,12 @@ HierCluster <- function(input, output, session, in.data) {
     InBranchCount <- branchCount()
     allIDs <- allIDnames()
     InTrajStatus <- Rval$trajStatus
+    InResetTraj <- input$b.reset
     
-    # As a side effect, this if-statement checks whether the tree isn't cut at all and if any data was removed.
+    # As a side effect, this if-statement checks whether the tree isn't cut at all
+    # and if any data was removed.
     # If this is the case, the vector stored in "Rval$trajStatus" can be initialised.
-    if(InBranchCount == 0 && is.null(InTrajStatus[which(InTrajStatus %in% 2)])){ 
+    if(InBranchCount == 0 && is.null(InTrajStatus[which(InTrajStatus == 2)])){ 
       cat("checkCut\n")
       InTrajStatus <- rep(0, length(allIDs))
       Rval$trajStatus <- InTrajStatus
@@ -370,18 +404,30 @@ HierCluster <- function(input, output, session, in.data) {
     
     # sets the length of the vector "Rval$trajStatus" according to the amount of the number of trajectories. 
     # This is needed when another dataset with more trajectories is loaded during the same session.
-    if (length(InTrajStatus) != length(allIDs))
+    if (
+        (length(InTrajStatus) != length(allIDs)) || (InResetTraj != isolate(Rval$countReset))
+       ) {
+      
+      cat("Resetting Rval$trajStatus\n")
       Rval$trajStatus <- rep(0, length(allIDs))
+      Rval$count <- 1
+      Rval$countReset <- InResetTraj
+      return(Rval$trajStatus)
+      
+      }
+    
     
     if (is.null(InClust))
       return(NULL)
     
+    # here we get the height output of the first branching event
     cat("Get height\n")
-    hc.height <- rev(InClust$height)[InBranchCount + 1] # here we get the height output of the first branching event
+    hc.height <- rev(InClust$height)[InBranchCount + 1]
     print(hc.height)
     
+    # contains information about grouping after treecutting
     cat("Calculate tree cut\n")
-    ct.loc <- cutree(InClust, h = hc.height) # contains information about grouping after treecutting
+    ct.loc <- cutree(InClust, h = hc.height) 
     
     cutvalue <- names(which(ct.loc > 1))
     
@@ -391,7 +437,6 @@ HierCluster <- function(input, output, session, in.data) {
     emptyValues <- oldValues[ - which(oldValues %in% cutreeValues)] 
     
     # as a side effect, "Rval$trajStatus" will be overwritten with the updated selection
-    #InTrajStatus [oldValues] <- 0
     InTrajStatus[newValues] <- 1
     InTrajStatus[emptyValues] <- 0
     Rval$trajStatus <- InTrajStatus
@@ -407,6 +452,7 @@ HierCluster <- function(input, output, session, in.data) {
   plotHierHeat <- function() {
     ns <- session$ns
     
+    cat("plotHierHeat\n")
     checkUpdate <- input$check.update
     
     # Construct that decides between updating the plot directly or simply with a dummy-button
@@ -419,7 +465,7 @@ HierCluster <- function(input, output, session, in.data) {
       
     } else {
       
-      Update <- input$b.update  # Dummy-button to update the heatmap only when button is pressed
+      Update <- input$b.update  # Dummy to update the heatmap only when button is pressed
       InDend <- isolate(hierDend())
       InMatrix <- isolate(hierMatrix())
       InPlotSel <- isolate(input$sel.plot)
@@ -427,27 +473,25 @@ HierCluster <- function(input, output, session, in.data) {
       
     }
     
-    if (is.null(InDend))
-      return(NULL)
-    
-    if (is.null(InMatrix))
-      return(NULL)
+    validate(
+      need(InMatrix != "" || InDend != "", "Please select a data set")
+    )
     
     palette.loc <- colorRampPalette(brewer.pal(9, rev(InColourSel)))(n = 99) #color palette. package: RColorBrewer
     
-    if (InPlotSel == "heatmap"){
-      dm.out <- heatmap.2(InMatrix,
-                        Rowv = InDend,
-                        Colv = FALSE,
-                        dendrogram = "row",
-                        trace = "none",
-                        col = palette.loc
-      )
-    } else {
-      dm.out <- plot(InDend)
-    }
+      if (InPlotSel == "heatmap"){
+        hm.out <- heatmap.2(InMatrix,
+                          Rowv = InDend,
+                          Colv = FALSE,
+                          dendrogram = "row",
+                          trace = "none",
+                          col = palette.loc
+        )
+      } else {
+        hm.out <- plot(InDend)
+      }
     
-    return(dm.out)
+    return(hm.out)
   }
   
     
@@ -467,21 +511,31 @@ HierCluster <- function(input, output, session, in.data) {
     ns <- session$ns
     
     cat("Plot1: \n")
+    
+    InAverage <- trajAverage()
+    InCutValues <- cutValues()
     InSelData <- selData()
-    dummy <- cutValues()
+    InLims <- plotLims()
     
-    if (is.null(InSelData))
+    if (is.null(InSelData)){
       return(NULL)
+    }
     
- 
-    plot1 <- ggplot(InSelData, aes(x = TIME, y = MEAS, group = ID)) + 
+    
+    if (sum(InCutValues == 1) > 0){
+      InAverage <- rep(InAverage, nrow(InSelData) / length(InAverage))
+    }
+    
+    plot1.out <- ggplot(InSelData, aes(x = TIME, y = MEAS, group = ID)) + 
       ggtitle(paste0("trajectory: ", paste(InSelData[, unique(ID)], collapse = ", "))) +
-      theme_bw() +
+      LOCggplotTheme() +
       scale_x_continuous(name = "Time") +
       scale_y_continuous(name = "Measurement") +
-      geom_line() 
+      ylim(InLims$min, InLims$max) +
+      geom_line() +
+      geom_line(aes(y = InAverage), color = "red", size = 1.5, alpha = 0.7)
     
-    return(plot1)
+    return(plot1.out)
   })
   
   
@@ -489,28 +543,40 @@ HierCluster <- function(input, output, session, in.data) {
   plot2 <- reactive({
     ns <- session$ns
     
-    cat("Plot2\n")
+    cat("Plot2: \n")
     
     # Construct that decides between updating the plot directly or simply with a dummy-button
     checkUpdate <- input$check.update
+    
     if (checkUpdate) {
-      InnotSelData <- notSelData()
+      InActiveData <- activeData()
+      InSlider <- input$sl.alpha
+      InAverage <- trajAverage()
+      InLims <- plotLims()
     } else {
       dummy <- input$b.update # Dummy-button to update the plot only when button is pressed
-      InnotSelData <- isolate(notSelData())
+      InActiveData <- isolate(activeData())
+      InSlider <- isolate(input$sl.alpha)
+      InAverage <- isolate(trajAverage())
+      InLims <- isolate(plotLims())
     }
     
-    if (is.null(InnotSelData))
-      return(NULL)
+    validate(
+      need(InActiveData != "", "Please select a data set")
+    )
 
-    plot2 <- ggplot(InnotSelData, aes(x = TIME, y = MEAS, group = ID)) + 
-      ggtitle("remaining trajectories") +
-      theme_bw() +
+    InAverage <- c(InAverage, rep(NA, length(InActiveData[, MEAS]) - length(InAverage)))
+    
+    plot2.out <- ggplot(InActiveData, aes(x = TIME, y = MEAS, group = ID)) + 
+      ggtitle(" ") +
+      LOCggplotTheme() +
       scale_x_continuous(name = "Time") +
       scale_y_continuous(name = "Measurement") +
-      geom_line(alpha = 0.4) 
+      ylim(InLims$min, InLims$max) +
+      geom_line(alpha = InSlider) +
+      geom_line(aes(y = InAverage), color="red", size = 1.5, alpha = min(1, InSlider*1.3))
     
-    return(plot2)
+    return(plot2.out)
   })
   
   
@@ -527,11 +593,32 @@ HierCluster <- function(input, output, session, in.data) {
     
   })
   
+  
   output$plot.2 <- renderPlot({
     
     plot2()
     
   })
+  
+  
+  output$txt.remove <- renderText({
+    InTrajStatus <- Rval$trajStatus
+    paste("Number of removed trajectories:", sum(InTrajStatus == 2))
+    
+  })
+  
+  output$txt.keep <- renderText({
+    InTrajStatus <- Rval$trajStatus
+    paste("Number of kept trajectories:", sum(InTrajStatus == 3))
+    
+  })
+  
+  output$txt.total <- renderText({
+    InTrajStatus <- Rval$trajStatus
+    paste("Number of total trajectories:", length(InTrajStatus))
+    
+  })
+  
    return(removedIDs)
 }
 

@@ -297,7 +297,7 @@ RollWin <- function(input, output, session, in.data){
     
     InPlotVis <- input$sel.plotvis
     
-    if (is.null(dm))
+    if(is.null(dm))
       return(NULL)
     
     if(InPlotVis == "line plot") {
@@ -344,7 +344,7 @@ RollWin <- function(input, output, session, in.data){
     cat("plot.single\n")
     dm.in <- singleTrajData()
     
-    if (is.null(dm.in))
+    if(is.null(dm.in))
       return(NULL)
     
     dm.out <- ggplot(dm.in, aes(x = TIME, y = MEAS, group = ID )) +
