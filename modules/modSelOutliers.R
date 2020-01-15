@@ -312,6 +312,7 @@ modSelOutliers <- function(input, output, session, in.data) {
       # !(input$numOutliersPerc > 0)
       loc.outpts = NULL
       vOut = NULL
+      
       nCellsCounter$nOutlierTpts = 0
     } # end: if (input$numOutliersPerc > 0)
     
