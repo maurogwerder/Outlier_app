@@ -22,12 +22,6 @@ options(shiny.maxRequestSize = 400 * 1024 ^ 2)
 
 server <- function(input, output) {
   
-  # clustering and generation of heatmap
-  hierCluster_out <- callModule(HierCluster, "HierCluster", in.data = dataInBoth)
-  
-  # Application of rolling window algorithm and interpolation
-  RollWin_out <- callModule(RollWin, "RollWin", in.data = dataInBoth)
-  
   # reactive values used for loading data from two different sources
   # -> see dataInBoth()
   counter <- reactiveValues(
@@ -248,9 +242,12 @@ server <- function(input, output) {
       cat("s.downMod: Rolling Window\n")
       downloadIDs <- RollWin_out()
       
-    } else {
+    } else if (input$s.downMod == "Hierarchical Clustering"){
       cat("s.downMod: Hierarchical cluster\n")
       downloadIDs <- hierCluster_out()
+    } else {
+      cat("s.downMod: Time Series")
+      downloadIDs <- selOutliers_out()
     }
     
     if(input$s.download == "full dataset without outliers"){
@@ -268,6 +265,14 @@ server <- function(input, output) {
     
     return(data_out)
   })
+  
+  # clustering and generation of heatmap
+  hierCluster_out <- callModule(HierCluster, "HierCluster", in.data = selOutliers_out)
+  
+  # Application of rolling window algorithm and interpolation
+  RollWin_out <- callModule(RollWin, "RollWin", in.data = selOutliers_out)
+  
+  selOutliers_out <- callModule(modSelOutliers, "modSelOutliers", in.data = dataInBoth)
   
   output$b.download <- downloadHandler(
     filename = "Removed_Trajectories.csv",
