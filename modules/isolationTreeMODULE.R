@@ -3,7 +3,7 @@
 #' Outlier Detection App: Application to identify outliers in time-series data.
 #' Author: Mauro Gwerder
 #' 
-#' The Module "HierClust" is clustering the data hierarchically and creates a
+#' The Module "IsoTree" is clustering the data hierarchically and creates a
 #' heatmap (using "heatmap.2" from the package "gplots") for visualization.
 #' Detected outlier-containing trajectories can be verified and kicked out one
 #' by one by the researcher.
@@ -11,7 +11,7 @@
 library(shinyjs)
 library(shinyBS)
 
-helpText.hierClust = c( liveUpdate = 'When ticked, heatmap and overview-plot will
+helpText.isoTree = c( liveUpdate = 'When ticked, heatmap and overview-plot will
                          be updated continuously. Can cause performance issues.',
                          manualUpdate = "Update the heatmap and the overview plot manually.
                          Only needed when live updating is disabled.",
@@ -19,7 +19,7 @@ helpText.hierClust = c( liveUpdate = 'When ticked, heatmap and overview-plot wil
                          marked as skipped.'
 )
 
-HierClusterInput <- function(id,label = "HierClust"){
+IsoTreeInput <- function(id,label = "IsoTree"){
   # gives all labels into a namespace (can I say it like that?)
   ns <- NS(id)
   
@@ -53,11 +53,11 @@ HierClusterInput <- function(id,label = "HierClust"){
         # If unticked, only the plot displaying the current selected trajectory will be
         # updated live.
         checkboxInput(ns('check.update'), "live plot updating?", value = T),
-        bsTooltip(ns('check.update'), helpText.hierClust[['liveUpdate']], placement = "top", trigger = "hover", options = NULL),
+        bsTooltip(ns('check.update'), helpText.isoTree[['liveUpdate']], placement = "top", trigger = "hover", options = NULL),
         
         # Updates heatmap and overviewplot if check.update is not ticked.
         actionButton(ns("b.update"), "Update plots"),
-        bsTooltip(ns("b.update"), helpText.hierClust[["manualUpdate"]], placement = "bottom", trigger = "hover", options = NULL),
+        bsTooltip(ns("b.update"), helpText.isoTree[["manualUpdate"]], placement = "bottom", trigger = "hover", options = NULL),
         height = 700,
         width = 4),
     
@@ -100,7 +100,7 @@ HierClusterInput <- function(id,label = "HierClust"){
 }
 
 
-HierCluster <- function(input, output, session, in.data) {
+IsoTree <- function(input, output, session, in.data) {
   
   ns <- session$ns
   
@@ -232,6 +232,8 @@ HierCluster <- function(input, output, session, in.data) {
     
     dm.out <- dm.in[ID %in% allIDs[which(InTrajStatus %in% c(0, 1))]]
     
+    cat("appended average: \n")
+    
     return(dm.out)
   })
   
@@ -359,7 +361,9 @@ HierCluster <- function(input, output, session, in.data) {
     if(is.null(dm.in))
       return(NULL)
     
-    average.out <- colMeans(dm.in, na.rm = T)
+    average.out <- data.table(ID = 'AVG',
+                              MEAS = colMeans(dm.in, na.rm = T),
+                              TIME = as.integer(colnames(dm.in)))
     
     return(average.out)
   })
@@ -521,19 +525,16 @@ HierCluster <- function(input, output, session, in.data) {
       return(NULL)
     }
     
-    
-    if (sum(InCutValues == 1) > 0){
-      InAverage <- rep(InAverage, nrow(InSelData) / length(InAverage))
-    }
+    # Attaches the average of all trajectories to the datatable for displaying in the plot.
+    InSelData <- rbind(InSelData, InAverage, fill = TRUE)
     
     plot1.out <- ggplot(InSelData, aes(x = TIME, y = MEAS, group = ID)) + 
       ggtitle(paste0("trajectory: ", paste(InSelData[, unique(ID)], collapse = ", "))) +
       LOCggplotTheme() +
-      scale_x_continuous(name = "Time") +
-      scale_y_continuous(name = "Measurement") +
-      ylim(InLims$min, InLims$max) +
-      geom_line() +
-      geom_line(aes(y = InAverage), color = "red", size = 1.5, alpha = 0.7)
+      labs(x = "Time", y = "Measurement") +
+      coord_cartesian(ylim = c(InLims$min, InLims$max)) +
+      geom_line(data = InSelData[ID != "AVG"]) +
+      geom_line(data = InSelData[ID == "AVG"], color = "red", size = 1.5, alpha = 0.7, show.legend = FALSE)
     
     return(plot1.out)
   })
@@ -565,16 +566,17 @@ HierCluster <- function(input, output, session, in.data) {
       need(InActiveData != "", "Please select a data set")
     )
 
-    InAverage <- c(InAverage, rep(NA, length(InActiveData[, MEAS]) - length(InAverage)))
+    #InAverage <- c(InAverage, rep(NA, length(InActiveData[, MEAS]) - length(InAverage)))
+    
+    InActiveData <- rbind(InActiveData, InAverage, fill = TRUE)
     
     plot2.out <- ggplot(InActiveData, aes(x = TIME, y = MEAS, group = ID)) + 
       ggtitle(" ") +
       LOCggplotTheme() +
-      scale_x_continuous(name = "Time") +
-      scale_y_continuous(name = "Measurement") +
-      ylim(InLims$min, InLims$max) +
-      geom_line(alpha = InSlider) +
-      geom_line(aes(y = InAverage), color="red", size = 1.5, alpha = min(1, InSlider*1.3))
+      labs(x = "Time", y = "Measurement") + 
+      coord_cartesian(ylim = c(InLims$min, InLims$max)) +
+      geom_line(data = InActiveData[ID != "AVG"], alpha = InSlider) +
+      geom_line(data = InActiveData[ID == "AVG"], color="red", size = 1.5, alpha = 0.7, show.legend = FALSE)
     
     return(plot2.out)
   })

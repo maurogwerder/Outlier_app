@@ -4,14 +4,14 @@
 #
 # This is a module of a Shiny web application.
 # Outlier identification, selection
-helpText.selOutliers = c(numOutliersPerc = 'Percentage of data points to remove from pooled data from all time points.',
+helpText.quanTrim = c(numOutliersPerc = 'Percentage of data points to remove from pooled data from all time points.',
                          chBtrajInter = "Linearly interpolate gaps created after removing outlier time points. This option will also interpolate pre-existing NAs and missing time points.",
                          rbOutliersType = 'Choose whether to remove outliers from the top, bottom, or both ends of the pooled data distribution.',
                          slOutliersGapLen = paste0("Time series with gaps longer than the threshold will be removed entirely. ",
                                                    "Shorter gaps can be interpolated or can remain in time series.")
 )
 # UI-remove-outliers ----
-modSelOutliersInput <- function(id, label = "modSelOutliers") {
+QuanTrimInput <- function(id, label = "modSelOutliers") {
   ns <- NS(id)
   
   shinyjs::useShinyjs()
@@ -26,17 +26,17 @@ modSelOutliersInput <- function(id, label = "modSelOutliers") {
                             max = 100,
                             value = 0, 
                             step = 0.05, width = '100px'),
-               bsTooltip(ns('numOutliersPerc'), helpText.selOutliers[["numOutliersPerc"]], placement = "top", trigger = "hover", options = NULL),
+               bsTooltip(ns('numOutliersPerc'), helpText.quanTrim[["numOutliersPerc"]], placement = "top", trigger = "hover", options = NULL),
                
                checkboxInput(ns('chBtrajInter'), 'Interpolate gaps', value = F),
-               bsTooltip(ns('chBtrajInter'), helpText.selOutliers[["chBtrajInter"]], placement = "top", trigger = "hover", options = NULL),
+               bsTooltip(ns('chBtrajInter'), helpText.quanTrim[["chBtrajInter"]], placement = "top", trigger = "hover", options = NULL),
                uiOutput(ns('varSelTimeFreq'))
         ),
         column(2, 
                radioButtons(ns('rbOutliersType'), 
                             label = 'From', 
                             choices = c('top' = 'top', 'top & bottom' = 'mid', 'bottom' = 'bot')),
-               bsTooltip(ns('rbOutliersType'), helpText.selOutliers[["rbOutliersType"]], placement = "top", trigger = "hover", options = NULL)
+               bsTooltip(ns('rbOutliersType'), helpText.quanTrim[["rbOutliersType"]], placement = "top", trigger = "hover", options = NULL)
         ),
         column(3,
                sliderInput(ns('slOutliersGapLen'),
@@ -45,7 +45,7 @@ modSelOutliersInput <- function(id, label = "modSelOutliers") {
                            max = 10,
                            value = 0, 
                            step = 1),
-               bsTooltip(ns('slOutliersGapLen'), helpText.selOutliers[["slOutliersGapLen"]], placement = "top", trigger = "hover", options = NULL)
+               bsTooltip(ns('slOutliersGapLen'), helpText.quanTrim[["slOutliersGapLen"]], placement = "top", trigger = "hover", options = NULL)
         ),
         column(3,
                downloadButton(ns('downOutlierCSV'), label = 'CSV with outlier IDs'),
@@ -60,7 +60,7 @@ modSelOutliersInput <- function(id, label = "modSelOutliers") {
 }
 
 # Server-remove-outliers ----
-modSelOutliers <- function(input, output, session, in.data) {
+QuanTrim <- function(input, output, session, in.data) {
   
   ns = session$ns
   
