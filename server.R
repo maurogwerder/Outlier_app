@@ -242,12 +242,12 @@ server <- function(input, output) {
       cat("s.downMod: Rolling Window\n")
       downloadIDs <- RollWin_out()
       
-    } else if (input$s.downMod == "Hierarchical Clustering"){
-      cat("s.downMod: Hierarchical cluster\n")
-      downloadIDs <- hierCluster_out()
+    } else if (input$s.downMod == "Isolation Tree"){
+      cat("s.downMod: Isolation Tree\n")
+      downloadIDs <- isoTree_out()
     } else {
-      cat("s.downMod: Time Series")
-      downloadIDs <- selOutliers_out()
+      cat("s.downMod: Quantile Trimming")
+      downloadIDs <- QuanTrim_out()
     }
     
     if(input$s.download == "full dataset without outliers"){
@@ -267,12 +267,12 @@ server <- function(input, output) {
   })
   
   # clustering and generation of heatmap
-  hierCluster_out <- callModule(HierCluster, "HierCluster", in.data = selOutliers_out)
+  isoTree_out <- callModule(IsoTree, "IsoTree", in.data = QuanTrim_out)
   
   # Application of rolling window algorithm and interpolation
-  RollWin_out <- callModule(RollWin, "RollWin", in.data = selOutliers_out)
+  RollWin_out <- callModule(RollWin, "RollWin", in.data = QuanTrim_out)
   
-  selOutliers_out <- callModule(modSelOutliers, "modSelOutliers", in.data = dataInBoth)
+  QuanTrim_out <- callModule(QuanTrim, "QuanTrim", in.data = dataInBoth)
   
   output$b.download <- downloadHandler(
     filename = "Removed_Trajectories.csv",

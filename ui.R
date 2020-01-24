@@ -17,17 +17,9 @@ ui <- dashboardPage( # starts shiny in dashboard
     # dashboard-equivalent to "tabs" in normal shiny
     sidebarMenu(
       
-      # Every item stands for one tab. "Rolling Window" and "hierarchical clustering" will show outputs of the
+      # Every item stands for one tab. "Rolling Window" and "isolation Tree" will show outputs of the
       # correspondent modules, whereas "Generate synthetic Data" & "Load Data" represent dropdown-menus that load
       # or generate datasets.
-      
-      menuItem("Time Series", tabName = "modSelOutliers"),
-      
-      menuItem("Rolling Window", tabName = "rollwindow", icon = icon("windows")),
-      
-      menuItem("hierarchical clustering", tabName = "hiercluster", icon = icon("tree")),
-      
-      
       
       menuItem("Generate synthetic Data", tabName = "synDataOpt", icon = icon("random"), # tab for synthetic Data options
                sliderInput("slider.syn", "amount of outliers", 0, 30, 1, width = "100%"),
@@ -70,7 +62,13 @@ ui <- dashboardPage( # starts shiny in dashboard
                
                downloadButton("b.download", "Download now!"),
                br())
-    )
+    ),
+    
+    menuItem("quantile Trimming", tabName = "quantrim", icon = icon("cut")),
+    
+    menuItem("Rolling Window", tabName = "rollwindow", icon = icon("redo-alt")),
+    
+    menuItem("Isolation Tree", tabName = "isotree", icon = icon("tree"))
   ),
   
   dashboardBody(
@@ -80,15 +78,15 @@ ui <- dashboardPage( # starts shiny in dashboard
     useShinyjs(),
     tabItems(
       
-      # references to the modules "RollWin", "HierCluster" & "modSelOutliers"
-      tabItem(tabName = "modSelOutliers",
-              modSelOutliersInput("modSelOutliers")
+      # references to the modules "RollWin", "IsoTrim" & "QuanTrim"
+      tabItem(tabName = "quantrim",
+              QuanTrimInput("QuanTrim")
       ),
       tabItem(tabName = "rollwindow",
               RollWinInput("RollWin")
       ),
-      tabItem(tabName = "hiercluster",
-              HierClusterInput("HierCluster")
+      tabItem(tabName = "isotree",
+              IsoTreeInput("IsoTree")
       )
     )
   )
