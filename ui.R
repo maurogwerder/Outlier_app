@@ -17,9 +17,15 @@ ui <- dashboardPage( # starts shiny in dashboard
     # dashboard-equivalent to "tabs" in normal shiny
     sidebarMenu(
       
-      # Every item stands for one tab. "Rolling Window" and "isolation Tree" will show outputs of the
+      # Every item stands for one tab. "Rolling Window" and "Isolation Tree" will show outputs of the
       # correspondent modules, whereas "Generate synthetic Data" & "Load Data" represent dropdown-menus that load
       # or generate datasets.
+      
+      menuItem("quantile Trimming", tabName = "quantrim", icon = icon("cut")),
+      
+      menuItem("Rolling Window", tabName = "rollwindow", icon = icon("redo-alt")),
+      
+      menuItem("Isolation Tree", tabName = "isotree", icon = icon("tree")),
       
       menuItem("Generate synthetic Data", tabName = "synDataOpt", icon = icon("random"), # tab for synthetic Data options
                sliderInput("slider.syn", "amount of outliers", 0, 30, 1, width = "100%"),
@@ -62,13 +68,7 @@ ui <- dashboardPage( # starts shiny in dashboard
                
                downloadButton("b.download", "Download now!"),
                br())
-    ),
-    
-    menuItem("quantile Trimming", tabName = "quantrim", icon = icon("cut")),
-    
-    menuItem("Rolling Window", tabName = "rollwindow", icon = icon("redo-alt")),
-    
-    menuItem("Isolation Tree", tabName = "isotree", icon = icon("tree"))
+    )
   ),
   
   dashboardBody(
