@@ -30,6 +30,7 @@ QuanTrimInput <- function(id, label = "modSelOutliers") {
                
                checkboxInput(ns('chBtrajInter'), 'Interpolate gaps', value = F),
                bsTooltip(ns('chBtrajInter'), helpText.quanTrim[["chBtrajInter"]], placement = "top", trigger = "hover", options = NULL),
+               checkboxInput(ns('ch.overview'), 'Display overview plot', value = F),
                uiOutput(ns('varSelTimeFreq'))
         ),
         column(2, 
@@ -54,8 +55,10 @@ QuanTrimInput <- function(id, label = "modSelOutliers") {
         ),
       width=12),
     
-    box(uiOutput(ns('uiDistPlot')), width=12))
+    box(uiOutput(ns('uiDistPlot')), width = 12),
   
+    uiOutput(ns('ui.overview'))
+    )
   
 }
 
@@ -253,7 +256,7 @@ QuanTrim <- function(input, output, session, in.data) {
     nCellsCounter$nCellsOrig = length(loc.out[, unique(ID)])
     
     # Remove outliers if the field with percentage of data to remove is greater than 0
-    if (input$numOutliersPerc > 0) {
+    if (input$numOutliersPerc > 0 && !is.na(input$numOutliersPerc)) {
       
       # scale all measurement points      
       loc.out[, y.sc := scale(MEAS)]  
@@ -326,6 +329,35 @@ QuanTrim <- function(input, output, session, in.data) {
         return(loc.out)
     
   })
+  
+  output$ui.overview <- renderUI({
+    ns <- session$ns
+    
+    cat("ui.overview\n")
+    
+    if(input$ch.overview) {
+      output$plot.overview <- renderPlot({
+        dm.in <- dtReturn()
+        
+        validate(
+          need(dm.in != "", "Please select a data set")
+        )
+        
+        plot.out <- ggplot(dm.in, aes(x = TIME, y = MEAS, group = ID)) +
+          geom_line(alpha = 0.5, size = 0.4) +
+          scale_x_continuous(name = "Time") +
+          scale_y_continuous(name = "Measurement") +
+          facet_wrap(as.formula(paste0("~", "FOV"))) +
+          theme_bw()
+        return(plot.out)
+      })
+    } else {
+      return(NULL)
+    }
+    
+    box(plotOutput(ns('plot.overview')), width = 12)
+  })
+  
   
   return(dtReturn)
 }
