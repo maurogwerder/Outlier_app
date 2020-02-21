@@ -65,7 +65,7 @@ QuanTrimInput <- function(id, label = "modSelOutliers") {
 # Server-remove-outliers ----
 QuanTrim <- function(input, output, session, in.data) {
   
-  ns = session$ns
+  ns <- session$ns
   
   # reactive counter to hold number of tracks before and after outlier removal
   nCellsCounter <- reactiveValues(

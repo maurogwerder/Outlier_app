@@ -95,7 +95,7 @@ InterPca <- function(input, output, session, in.data) {
     # plotting PCA without autoplot
     # Autoplot takes away a lot of features (like giving arbitrarily many args to aes()),
     # which makes it more difficult to include features like custom tooltips.
-    ggplot.pca <- ggplot(pca_dt, aes(x=PC1, y=PC2, ID=ID, color = FOV,
+    ggplot.pca <- ggplot(pca_dt, aes(x=PC1, y=PC2, ID=ID, #color = FOV,
                                      text = sprintf("ID: %s<br>Group: %s", ID, FOV))) +
                           geom_point() +
                           theme_bw()
