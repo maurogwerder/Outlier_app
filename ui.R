@@ -27,6 +27,8 @@ ui <- dashboardPage( # starts shiny in dashboard
       
       menuItem("Isolation Tree", tabName = "isotree", icon = icon("tree")),
       
+      menuItem("Interactive PCA", tabName = "interpca", icon = icon("plus-square")),
+      
       menuItem("Generate synthetic Data", tabName = "synDataOpt", icon = icon("random"), # tab for synthetic Data options
                sliderInput("slider.syn", "amount of outliers", 0, 30, 1, width = "100%"),
                checkboxInput("check.super", "add innovative outliers"),
@@ -87,6 +89,9 @@ ui <- dashboardPage( # starts shiny in dashboard
       ),
       tabItem(tabName = "isotree",
               IsoTreeInput("IsoTree")
+      ),
+      tabItem(tabName = "interpca",
+              InterPcaInput("InterPca")
       )
     )
   )

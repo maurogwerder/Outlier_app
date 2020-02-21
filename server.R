@@ -158,10 +158,10 @@ server <- function(input, output) {
     if(is.null(dm.in))
       return(NULL)
     
-    dm.in[, ID := TrackLabel]
+    dm.in[, ID := as.factor(TrackLabel)]
     dm.in[, TIME := Metadata_RealTime]
     dm.in[, MEAS := objCyto_Intensity_MeanIntensity_imErkCor]
-    dm.in[, FOV := Metadata_Site]
+    dm.in[, FOV := as.factor(Metadata_Site)]
     dm.out <- dm.in[, .(ID, TIME, MEAS, FOV)]
     
     if(input$check.super) {
@@ -273,6 +273,8 @@ server <- function(input, output) {
   RollWin_out <- callModule(RollWin, "RollWin", in.data = QuanTrim_out)
   
   QuanTrim_out <- callModule(QuanTrim, "QuanTrim", in.data = dataInBoth)
+  
+  InterPCA_out <- callModule(InterPca, "InterPca", in.data = QuanTrim_out)
   
   output$b.download <- downloadHandler(
     filename = "Removed_Trajectories.csv",
