@@ -18,6 +18,12 @@ Following packages need to be installed in order to run the app locally:
 * RColorBrewer
 * imputeTS
 * gridExtra
+* plotly
+* tsfeaturex
+* ggfortify
+* reshape2
+* shinyjs
+* shinyBS
 
 Install packages using `install.packages('name_of_the_package_from_the_list_above')` command in RStudio command line.
 
@@ -26,7 +32,9 @@ install.packages(c("shiny", "shinydashboard",
 		"data.table",
 		"ggplot2", "gplots", "gridExtra",
 		"dendextend", "RColorBrewer",
-		"imputeTS")) 
+		"imputeTS", "plotly", "tsfeaturex", 
+		"ggfortify", "reshape2", "shinyjs",
+		"shinyBS")) 
 ```
 
 ## Input file
