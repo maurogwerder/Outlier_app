@@ -1,5 +1,13 @@
 # Interactive R/Shiny web app for detecting outliers in time series data
 
+## General idea
+This shiny-application was developed to facilitate working with time-series data, especially handling outliers. Although primarly made and used for handling microscopic video-data created in the Pertz lab, the application handles any kind of time-series data. There are currently four different modules that provide different tools that are suited for different kinds of time-series-data outliers.
+Current modules are:
+* Quantile Trimming (author: Maciej Dobrzynski)
+* Isolation Tree
+* Rolling Window
+* Interactive PCA
+
 ## Running the app from the server
 The app can be accessed here:
 https://pertzlab.unibe.ch:3838/Outlier_app/ (UniBe VPN only!)
