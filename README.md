@@ -34,6 +34,7 @@ Following packages need to be installed in order to run the app locally:
 * shinyBS
 
 Install packages using `install.packages('name_of_the_package_from_the_list_above')` command in RStudio command line.
+  
 Install package 'tsfeaturex' using `devtools::install_github("nelsonroque/tsfeaturex")` command in RStudio command line.
 
 ```
