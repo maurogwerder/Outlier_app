@@ -120,7 +120,12 @@ InterPca <- function(input, output, session, in.data) {
     cat("plot_select: \n")
     
     dt <- in.data()
-    rowNum <- hover_data()$pointNumber # number of row -1 (starts from 0)
+    groupNum <- hover_data()$curveNumber
+    pointNum <- hover_data()$pointNumber
+    rowNum <- as.numeric(paste0(groupNum, pointNum)) + 1 # number of row -1 (starts from 0)
+    
+    
+    
     pca_dt <- pca_calc()
     
     validate(
@@ -131,9 +136,7 @@ InterPca <- function(input, output, session, in.data) {
       need(rowNum != "", "Please hover over a datapoint")
     )
     
-    # rowNum needs to be adjusted as the output of hover_data()$pointNumber starts with 0
-    pca_ID <- pca_dt[rowNum + 1, ID]
-    
+    pca_ID <- pca_dt[rowNum, ID]
     plot.out <- ggplot(data = dt[ID == pca_ID], aes(x = TIME, y = MEAS)) + 
       geom_line(stat = "identity") +
       ggtitle(paste0("ID: ", dt[ID == pca_ID, unique(ID)])) +
@@ -154,12 +157,14 @@ InterPca <- function(input, output, session, in.data) {
     ns <- session$ns
     
     dt <- in.data()
-    rowNum <- click_data()$pointNumber # number of row -1 (starts from 0)
+    groupNum <- click_data()$curveNumber
+    pointNum <- click_data()$pointNumber
+    rowNum <- as.numeric(paste0(groupNum, pointNum)) + 1 # number of row -1 (starts from 0)
+    
     pca_dt <- pca_calc()
     removedIDs <- isolate(Rval$removedIDs)
-    
-    pca_ID <- pca_dt[rowNum + 1, ID]
-    
+    print(pca_dt)
+    pca_ID <- pca_dt[rowNum, ID]
     validate(
       need(rowNum != "", "click on datapoints to select them as outliers")
     )
@@ -167,7 +172,6 @@ InterPca <- function(input, output, session, in.data) {
     removedIDs[length(removedIDs) + 1] <- pca_ID
     
     Rval$removedIDs <- removedIDs
-    
     return(removedIDs)
   })
 
