@@ -1,5 +1,13 @@
 # Interactive R/Shiny web app for detecting outliers in time series data
 
+## General idea
+This shiny-application was developed to facilitate working with time-series data, especially handling outliers. Although primarly made and used for handling microscopic video-data created in the Pertz lab, the application handles any kind of time-series data. There are currently four different modules that provide different tools that are suited for different kinds of time-series-data outliers.
+Current modules are:
+* Quantile Trimming (author: Maciej Dobrzynski)
+* Isolation Tree
+* Rolling Window
+* Interactive PCA
+
 ## Running the app from the server
 The app can be accessed here:
 https://pertzlab.unibe.ch:3838/Outlier_app/ (UniBe VPN only!)
@@ -18,15 +26,25 @@ Following packages need to be installed in order to run the app locally:
 * RColorBrewer
 * imputeTS
 * gridExtra
+* plotly
+* tsfeaturex
+* ggfortify
+* reshape2
+* shinyjs
+* shinyBS
 
 Install packages using `install.packages('name_of_the_package_from_the_list_above')` command in RStudio command line.
+  
+Install package 'tsfeaturex' using `devtools::install_github("nelsonroque/tsfeaturex")` command in RStudio command line.
 
 ```
 install.packages(c("shiny", "shinydashboard",
 		"data.table",
 		"ggplot2", "gplots", "gridExtra",
 		"dendextend", "RColorBrewer",
-		"imputeTS")) 
+		"imputeTS", "plotly", "tsfeaturex", 
+		"ggfortify", "reshape2", "shinyjs",
+		"shinyBS")) 
 ```
 
 ## Input file
@@ -58,5 +76,5 @@ The first row should include column headers. The input CSV file should contain a
 In case of multi-variate time series, additional columns with variables can be added in the input. Then, GUI allows for choosing a single or a combination of two variables to display.
 
 ## Thesis "Interactive Time-series Outlier Detection": 
-The thesis centering around the devlopment of this application can be accessed here:
+The thesis centering around the development of this application can be accessed here:
 https://www.researchgate.net/publication/333845151_Interactive_Time-series_Outlier_Detection
