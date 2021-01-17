@@ -133,6 +133,7 @@ IsoTree <- function(input, output, session, in.data) {
     ns <- session$ns
     
     cat("branchCount\n")
+    
     InPrevTraj <- input$b.prevtraj
     InNxtTraj <- input$b.nxtraj
     InSkip <- input$b.skip

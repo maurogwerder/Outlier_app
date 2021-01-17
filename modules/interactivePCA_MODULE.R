@@ -1,3 +1,14 @@
+#'
+#' Outlier Detection App: Application to identify outliers in time-series data.
+#' Author: Mauro Gwerder
+#' 
+#' The module 'interactivePCA' provides an interactive PCA, where interesting 
+#' data-points can be examined by hovering and selected by clicking. Feature
+#' extraction is handled by checkboxes. Downloading data removed using this
+#' module is currently not possible. More options for feature extraction, 
+#' interactive boxplots and selection of multiple points at once will be added
+#' in the future.
+
 library(tsfeaturex)
 library(ggfortify)
 library(plotly)
@@ -19,9 +30,10 @@ InterPcaInput <- function(id, label = "InterPca") {
                     plotOutput(ns("plot.hover")), cellWidths = c("70%", "30%")),
                     textOutput(ns("txt.removedIDs"))
                     ),
-           tabPanel(title = "Boxplot",
-                    actionButton(ns("b.boxplot"), "Plot!"),
-                    plotlyOutput(ns("ply.boxplot"))),
+           # interactive boxplot will be added in the future
+           #tabPanel(title = "Boxplot",
+                    #actionButton(ns("b.boxplot"), "Plot!"),
+                    #plotlyOutput(ns("ply.boxplot"))),
            width = 12)
   )
 }
@@ -33,8 +45,10 @@ InterPca <- function(input, output, session, in.data) {
   
   Rval <- reactiveValues(removedIDs = c())  # stores all as outliers selected IDs in a vector
   
+  
+  # Reactive that returns a data.table of extracted features
   feat_extract <- reactive({
-    
+    cat("call: feat_extract")
     ns <- session$ns 
     
     dt <- in.data()
@@ -63,6 +77,7 @@ InterPca <- function(input, output, session, in.data) {
   })
   
   
+  # returns a data.table with the information of pca$x
   pca_calc <- eventReactive(input$b.pca, {
     ns <- session$ns
     
@@ -79,6 +94,8 @@ InterPca <- function(input, output, session, in.data) {
     pca_dt <- merge(pca_dt, unique(dt[, .(ID, FOV)]))
     return(pca_dt)
   })
+  
+  
   
   plot.out <- reactive({
     
@@ -107,10 +124,13 @@ InterPca <- function(input, output, session, in.data) {
   })
   
   
+  # the plotly-function 'event_data' is triggered by the event specified and returns
+  # a data.frame with information about x- and y-coordinates, group and ID.
   hover_data <- reactive({
     
     event_data("plotly_hover", source="ply.pca")
   })
+  
   
   # Hovering over a data-point triggers the plotting of the whole trajectory
   # correspondent to that data-point.
@@ -143,10 +163,13 @@ InterPca <- function(input, output, session, in.data) {
   })
   
   
+  # the plotly-function 'event_data' is triggered by the event specified and returns
+  # a data.frame with information about x- and y-coordinates, group and ID.
   click_data <- reactive({
     
     event_data("plotly_click", source="ply.pca")
   })
+  
   
   # Clicking on a data-point will add the correspondent ID to the reactive value
   # 'Rval$removedIDs'.
