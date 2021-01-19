@@ -1,27 +1,32 @@
 library(tsfeaturex)
 library(ggfortify)
 library(plotly)
+library(shinyBS)
 
 InterPcaInput <- function(id, label = "InterPca") {
   
   ns <- NS(id)
   
+  shinyjs::useShinyjs()
+  
   fluidRow(
     box(title = "Features", width = 12,
-        checkboxGroupInput(ns("chg.features"), label = "Select features: ", inline = T,
+        checkboxGroupInput(ns("chgFeatures"), label = "Select features: ", inline = T,
                            choiceNames = c("mean", "median", "min", "max"),
                            choiceValues = c("f.mean", "f.median", "f.min", "f.max")
-                           )
+                           ),
+        
         ),
+    bsTooltip(ns("chgFeatures"), "how much is the fish", placement = "top", trigger = "hover"),
     tabBox(tabPanel(title = "PCA",
                     actionButton(ns("b.pca"), "Plot!"),
                     splitLayout(plotlyOutput(ns("ply.pca")),
                     plotOutput(ns("plot.hover")), cellWidths = c("70%", "30%")),
                     textOutput(ns("txt.removedIDs"))
                     ),
-           tabPanel(title = "Boxplot",
-                    actionButton(ns("b.boxplot"), "Plot!"),
-                    plotlyOutput(ns("ply.boxplot"))),
+           #tabPanel(title = "Boxplot",
+                    #actionButton(ns("b.boxplot"), "Plot!"),
+                    #plotlyOutput(ns("ply.boxplot"))),
            width = 12)
   )
 }
@@ -38,7 +43,7 @@ InterPca <- function(input, output, session, in.data) {
     ns <- session$ns 
     
     dt <- in.data()
-    chgFeatures <- input$chg.features
+    chgFeatures <- input$chgFeatures
     
   validate(
      need(dt != "" && chgFeatures != "", "Please select features and a data set")
@@ -68,7 +73,7 @@ InterPca <- function(input, output, session, in.data) {
     
     feats <- feat_extract()
     dt <- in.data()
-    chgFeatures <- input$chg.features
+    chgFeatures <- input$chgFeatures
     
     
     # Manually constructing a data.table for PCA, as it increases flexibility
@@ -85,7 +90,7 @@ InterPca <- function(input, output, session, in.data) {
     ns <- session$ns
     
     pca_dt <- pca_calc()
-    chgFeatures <- input$chg.features
+    chgFeatures <- input$chgFeatures
     
     validate(
       need(length(chgFeatures) > 1, "Please select two or more features")
@@ -147,7 +152,7 @@ InterPca <- function(input, output, session, in.data) {
   
   
   click_data <- reactive({
-    
+    cat("plot_click: \n")
     event_data("plotly_click", source="ply.pca")
   })
   
@@ -163,13 +168,32 @@ InterPca <- function(input, output, session, in.data) {
     
     pca_dt <- pca_calc()
     removedIDs <- isolate(Rval$removedIDs)
-    print(pca_dt)
     pca_ID <- pca_dt[rowNum, ID]
-    validate(
-      need(rowNum != "", "click on datapoints to select them as outliers")
-    )
     
-    removedIDs[length(removedIDs) + 1] <- pca_ID
+    # If there were alreadysom datapoints removed, the validate 
+    if(length(removedIDs) == 0){
+      validate(
+        need(rowNum != "", "click on datapoints to select them as outliers")
+      )
+    }
+    
+    # enables to unselect a datapoint by clicking on it again
+    # issue: quickly selectand unselect the same datapoint is not possible,
+    # because 'plotly_click' does not register a click that is already in 
+    # memory. Double click will clear memory and it will work again.
+    if(length(pca_ID) != 0){
+      cat("pca_ID: check 1\n")
+      if(length(removedIDs) != 0 && pca_ID %in% removedIDs){
+        cat("pca_ID: check 2\nRemoved IDs: ", removedIDs, "\n pca_ID:", pca_ID, "\n")
+        removedIDs <- removedIDs[!removedIDs %in% pca_ID]
+        cat("pca_ID: check 3\nRemoved IDs: ", removedIDs, "\n pca_ID:", pca_ID, "\n")
+      } else {
+        removedIDs[length(removedIDs) + 1] <- pca_ID
+      }
+      
+    }
+    
+    
     
     Rval$removedIDs <- removedIDs
     return(removedIDs)

@@ -1,5 +1,5 @@
 library(shinydashboard)
-#library(shinyjs) # http://deanattali.com/shinyjs/
+library(shinyjs) # http://deanattali.com/shinyjs/
 
 ui <- dashboardPage( # starts shiny in dashboard
   
