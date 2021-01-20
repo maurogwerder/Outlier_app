@@ -1,0 +1,10 @@
+name: application
+title:
+username:
+account: outlierapp
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 3482443
+bundleId: 4109011
+url: https://outlierapp.shinyapps.io/application/
+when: 1610911520.43751

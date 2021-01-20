@@ -10,7 +10,7 @@ Current modules are:
 
 ## Running the app from the server
 The app can be accessed here:
-https://pertzlab.unibe.ch:3838/Outlier_app/ (UniBe VPN only!)
+https://outlierapp.shinyapps.io/application/
 
 ## Running the app locally
 Alternatively, after downloading the code, the app can be run within RStudio. Open `server.R` or `ui.R` file, then click "Run App" button with green triangle in the upper right corner of the window with code open.
@@ -34,6 +34,8 @@ Following packages need to be installed in order to run the app locally:
 * shinyBS
 
 Install packages using `install.packages('name_of_the_package_from_the_list_above')` command in RStudio command line.
+  
+Install package 'tsfeaturex' using `devtools::install_github("nelsonroque/tsfeaturex")` command in RStudio command line.
 
 ```
 install.packages(c("shiny", "shinydashboard",
@@ -74,5 +76,5 @@ The first row should include column headers. The input CSV file should contain a
 In case of multi-variate time series, additional columns with variables can be added in the input. Then, GUI allows for choosing a single or a combination of two variables to display.
 
 ## Thesis "Interactive Time-series Outlier Detection": 
-The thesis centering around the devlopment of this application can be accessed here:
+The thesis centering around the development of this application can be accessed here:
 https://www.researchgate.net/publication/333845151_Interactive_Time-series_Outlier_Detection
