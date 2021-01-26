@@ -132,7 +132,7 @@ server <- function(input, output) {
     if(input$inSelFOV == "none")
       dm.DT[, FOV := "-"]
     else
-      dm.DT[, FOV := get(input$inSelFOV)]
+      dm.DT[, FOV := as.factor(get(input$inSelFOV))]
     
     dm.out <- dm.DT[, .(ID, TIME, MEAS, FOV)]
     return(dm.out)
