@@ -69,7 +69,7 @@ InterPca <- function(input, output, session, in.data) {
     out.dt <- as.data.table(features_to_df_edit(out.list,
                                            data.format = "wide",
                                            group_var = "id"))
-    
+
     # Column PACKAGE_VERSION not needed for PCA
     return(out.dt[, PACKAGE_VERSION := NULL])
   })
@@ -107,7 +107,6 @@ InterPca <- function(input, output, session, in.data) {
     validate(
       need(length(chgFeatures) > 1, "Please select two or more features")
     )
-   
     # http://huboqiang.cn/2016/03/03/RscatterPlotPCA
     # plotting PCA without autoplot
     # Autoplot takes away a lot of features (like giving arbitrarily many args to aes()),
@@ -136,14 +135,11 @@ InterPca <- function(input, output, session, in.data) {
   plot_hover <- reactive({
     
     ns <- session$ns
-    cat("plot_select: \n")
     
     dt <- in.data()
     groupNum <- hover_data()$curveNumber
     pointNum <- hover_data()$pointNumber
     rowNum <- as.numeric(paste0(groupNum, pointNum)) + 1 # number of row -1 (starts from 0)
-    
-    
     
     pca_dt <- pca_calc()$pca_dt
     
@@ -154,7 +150,10 @@ InterPca <- function(input, output, session, in.data) {
     validate(
       need(rowNum != "", "Please hover over a datapoint")
     )
-    pca_ID <- pca_dt[rowNum, ID]
+    pca_IDs <- pca_dt[FOV == unique(FOV)[groupNum + 1], ID]
+    cat("group-selected pca_IDs: ", pca_IDs, "\n")
+    pca_ID <- pca_IDs[pointNum + 1]
+    
     plot.out <- ggplot(data = dt[ID == pca_ID], aes(x = TIME, y = MEAS)) + 
       geom_line(stat = "identity") +
       ggtitle(paste0("ID: ", dt[ID == pca_ID, unique(ID)])) +
@@ -165,7 +164,6 @@ InterPca <- function(input, output, session, in.data) {
   
   
   click_data <- reactive({
-    cat("plot_click: \n")
     event_data("plotly_click", source="ply.pca")
   })
   
@@ -181,9 +179,12 @@ InterPca <- function(input, output, session, in.data) {
     
     pca_dt <- pca_calc()$pca_dt
     removedIDs <- isolate(Rval$removedIDs)
-    pca_ID <- pca_dt[rowNum, ID]
     
-    # If there were alreadysom datapoints removed, the validate 
+    pca_IDs <- pca_dt[FOV %in% unique(FOV)[groupNum + 1], ID]
+    cat("group-selected pca_IDs: ", pca_IDs, "\n")
+    pca_ID <- pca_IDs[pointNum + 1]
+    
+    # If there were already some datapoints removed, the validate 
     if(length(removedIDs) == 0){
       validate(
         need(rowNum != "", "click on datapoints to select them as outliers")
@@ -195,11 +196,8 @@ InterPca <- function(input, output, session, in.data) {
     # because 'plotly_click' does not register a click that is already in 
     # memory. Double click will clear memory and it will work again.
     if(length(pca_ID) != 0){
-      cat("pca_ID: check 1\n")
       if(length(removedIDs) != 0 && pca_ID %in% removedIDs){
-        cat("pca_ID: check 2\nRemoved IDs: ", removedIDs, "\n pca_ID:", pca_ID, "\n")
         removedIDs <- removedIDs[!removedIDs %in% pca_ID]
-        cat("pca_ID: check 3\nRemoved IDs: ", removedIDs, "\n pca_ID:", pca_ID, "\n")
       } else {
         removedIDs[length(removedIDs) + 1] <- pca_ID
       }
