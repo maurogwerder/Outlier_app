@@ -94,12 +94,31 @@ server <- function(input, output) {
     )
   })
   
+  output$uiOut_download <- renderUI({
+    dm.in <- loadData()
+    if(input$s.downMod != 'Rolling Window'){
+      choices_list = c("full dataset without outliers",
+                       "shortened dataset without outliers",
+                       "Outlier IDs")
+    } else {
+      choices_list = c("full dataset without outliers",
+                  "shortened dataset without outliers",
+                  "Outlier IDs",
+                  "shortened dataset with interpolated Data")
+    }
+    
+    selectInput("s_download", "select download",
+                choices = choices_list, 
+                selected = "full dataset without outliers",
+                width = "100%")
+  })
+  
   output$uiOut.FOV <- renderUI({
     cat("output UI FOV\n")
     InCols <- getDataCols()
     selectInput(
       "inSelFOV",
-      "Select FOV column (optional):",
+      "Select group column (optional):",
       c("none", InCols),
       width = "100%"
     )
@@ -240,34 +259,37 @@ server <- function(input, output) {
     # Checks from which module the data should be taken
     if(input$s.downMod == "Rolling Window"){
       cat("s.downMod: Rolling Window\n")
-      downloadIDs <- RollWin_out()
-      
+      downloadIDs<- RollWin_out[[1]]()
     } else if (input$s.downMod == "Isolation Tree"){
       cat("s.downMod: Isolation Tree\n")
-      downloadIDs <- isoTree_out()
-    } else {
-      cat("s.downMod: Quantile Trimming")
-      downloadIDs <- QuanTrim_out()
+      downloadIDs <- IsoTree_out()
+    } else if (input$s.downMod == "Interactive PCA"){
+      cat("s.downMod: Interactive PCA\n")
+      downloadIDs <- InterPCA_out()
     }
     
-    if(input$s.download == "full dataset without outliers"){
+    if(input$s_download == "full dataset without outliers"){
       cat("s.download: full\n")
       data_out <- dm_full[!(get(input$inSelID) %in% downloadIDs)]
       
-    } else if (input$s.download == "shortened dataset without outliers"){
+    } else if (input$s_download == "shortened dataset without outliers"){
       cat("s.download: short\n")
       data_out <- dm_short[!(ID %in% downloadIDs), .(ID, TIME, MEAS, FOV)]
       
-    } else if (input$s.download == "Outlier IDs"){
+    } else if (input$s_download == "Outlier IDs"){
       cat("s.download: IDs\n")
       data_out <- downloadIDs
+    } else if (input$s_download == "shortened dataset with interpolated Data"){
+      cat("s.download: interpolated\n")
+      data_out <- RollWin_out[[2]]()
     }
     
     return(data_out)
   })
   
+  
   # clustering and generation of heatmap
-  isoTree_out <- callModule(IsoTree, "IsoTree", in.data = QuanTrim_out)
+  IsoTree_out <- callModule(IsoTree, "IsoTree", in.data = QuanTrim_out)
   
   # Application of rolling window algorithm and interpolation
   RollWin_out <- callModule(RollWin, "RollWin", in.data = QuanTrim_out)

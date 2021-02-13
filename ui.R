@@ -57,19 +57,15 @@ ui <- dashboardPage( # starts shiny in dashboard
       menuItem("Downloads", tabName = "downloads", icon = icon("download"),
                selectInput("s.downMod", "Data from which Module?",
                            choices = c("Rolling Window",
-                                       "Hierarchical Clustering",
-                                       "Time Series"),
+                                       "Isolation Tree",
+                                       "Interactive PCA"),
                            selected = "Rolling Window"),
                
-               selectInput("s.download", "select download",
-                           choices = c("full dataset without outliers",
-                                       "shortened dataset without outliers",
-                                       "Outlier IDs"), 
-                           selected = "full dataset without outliers",
-                           width = "100%"), 
+               uiOutput("uiOut_download"),
                
                downloadButton("b.download", "Download now!"),
-               br())
+               br()
+      )
     )
   ),
   

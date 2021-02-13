@@ -151,7 +151,6 @@ InterPca <- function(input, output, session, in.data) {
       need(rowNum != "", "Please hover over a datapoint")
     )
     pca_IDs <- pca_dt[FOV == unique(FOV)[groupNum + 1], ID]
-    cat("group-selected pca_IDs: ", pca_IDs, "\n")
     pca_ID <- pca_IDs[pointNum + 1]
     
     plot.out <- ggplot(data = dt[ID == pca_ID], aes(x = TIME, y = MEAS)) + 
@@ -181,7 +180,6 @@ InterPca <- function(input, output, session, in.data) {
     removedIDs <- isolate(Rval$removedIDs)
     
     pca_IDs <- pca_dt[FOV %in% unique(FOV)[groupNum + 1], ID]
-    cat("group-selected pca_IDs: ", pca_IDs, "\n")
     pca_ID <- pca_IDs[pointNum + 1]
     
     # If there were already some datapoints removed, the validate 
@@ -231,4 +229,6 @@ InterPca <- function(input, output, session, in.data) {
              placement = "top",
              content = helpText.interPCA[["linkPCA"]],
              trigger = "click")
+  
+  return(plot_click)
 }
