@@ -371,6 +371,6 @@ RollWin <- function(input, output, session, in.data){
     plotSingle()
     
   })
-  return(removeDownload)
+  return(list(IDs = removeDownload, shortened_data=interpAll))
 }
 
