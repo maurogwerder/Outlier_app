@@ -535,7 +535,7 @@ IsoTree <- function(input, output, session, in.data) {
       labs(x = "Time", y = "Measurement") +
       coord_cartesian(ylim = c(InLims$min, InLims$max)) +
       geom_line(data = InSelData[ID != "AVG"]) +
-      geom_line(data = InSelData[ID == "AVG"], color = "red", size = 1.5, alpha = 0.7, show.legend = FALSE)
+      geom_line(data = InSelData[ID == "AVG"], color = "red", linewidth = 1.5, alpha = 0.7, show.legend = FALSE)
     
     return(plot1.out)
   })
@@ -577,7 +577,7 @@ IsoTree <- function(input, output, session, in.data) {
       labs(x = "Time", y = "Measurement") + 
       coord_cartesian(ylim = c(InLims$min, InLims$max)) +
       geom_line(data = InActiveData[ID != "AVG"], alpha = InSlider) +
-      geom_line(data = InActiveData[ID == "AVG"], color="red", size = 1.5, alpha = 0.7, show.legend = FALSE)
+      geom_line(data = InActiveData[ID == "AVG"], color="red", linewidth = 1.5, alpha = 0.7, show.legend = FALSE)
     
     return(plot2.out)
   })

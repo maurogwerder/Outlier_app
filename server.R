@@ -206,7 +206,9 @@ server <- function(input, output) {
   loadData <- eventReactive(input$file.name, {
     dm <- input$file.name
     cat("DataLoad\n")
-    if (!(is.null(dm) || dm == ""))
+    
+    #if (!(is.null(dm) || dm == ""))
+    if (!is.null(dm))
       return(fread(dm$datapath))
   })
   
